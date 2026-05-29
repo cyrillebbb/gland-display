@@ -472,15 +472,74 @@
   }
 
   // ═══════════ PANEL B — BATEAUX CGN ═══════════
+  // Try multiple station name variants for Nyon CGN port
+  const CGN_STATION_NAMES = [
+    'Nyon, débarcadère',
+    'Nyon, debarcadere',
+    'Nyon, CGN',
+    'Nyon CGN',
+    'Nyon, Quai',
+  ];
+
+  async function fetchBoatDepartures() {
+    // First try each station name
+    for (const name of CGN_STATION_NAMES) {
+      const url = 'https://transport.opendata.ch/v1/stationboard?station='+encodeURIComponent(name)+'&limit=7&type=departure';
+      try {
+        const r = await fetch(url);
+        if (!r.ok) continue;
+        const data = await r.json();
+        const boats = (data.stationboard||[]).filter(d => {
+          const cat = (d.category||'').toUpperCase();
+          // Only keep boat/ship departures
+          return cat === 'BAT' || cat === 'BOAT' || cat === 'SCHIFF' || cat.includes('BAT') ||
+                 (d.name||'').toLowerCase().includes('cgn') ||
+                 (d.operator||'').toLowerCase().includes('cgn') ||
+                 (d.operator||'').toLowerCase().includes('navigation');
+        });
+        if (boats.length > 0) return { boats, stationName: data.station?.name || name };
+
+        // Even if no boat filter match, if stationboard has results use them
+        if ((data.stationboard||[]).length > 0) return { boats: data.stationboard.slice(0,7), stationName: data.station?.name || name };
+      } catch(e) { continue; }
+    }
+
+    // Fallback: search for station then use its ID
+    try {
+      const sr = await fetch('https://transport.opendata.ch/v1/locations?query=Nyon+bateau&type=station');
+      if (sr.ok) {
+        const sdata = await sr.json();
+        const stations = sdata.stations || [];
+        const cgn = stations.find(s => {
+          const n = (s.name||'').toLowerCase();
+          return n.includes('debarcadere') || n.includes('débarcadère') || n.includes('cgn') || n.includes('rive');
+        });
+        if (cgn) {
+          const r2 = await fetch('https://transport.opendata.ch/v1/stationboard?id='+cgn.id+'&limit=7&type=departure');
+          if (r2.ok) {
+            const d2 = await r2.json();
+            return { boats: d2.stationboard||[], stationName: cgn.name };
+          }
+        }
+        // Log what we found for debugging
+        console.log('Stations found:', stations.map(s=>s.name+' ('+s.id+')').join(', '));
+      }
+    } catch(e) {}
+
+    return { boats: [], stationName: null };
+  }
+
   async function refreshBoats(){
+    const list = document.getElementById('boatsList');
     try{
-      const r=await fetch('https://transport.opendata.ch/v1/stationboard?station=Nyon%2C%20CGN&limit=7&type=departure');
-      if(!r.ok)throw new Error('HTTP '+r.status);
-      const data=await r.json();
-      const boats=data.stationboard||[];
-      const list=document.getElementById('boatsList');
-      if(!boats.length){list.innerHTML='<div class="loading-msg">No boat departures available.</div>';return;}
-      list.innerHTML=boats.map((dep,i)=>{
+      const { boats, stationName } = await fetchBoatDepartures();
+
+      if(!boats.length){
+        list.innerHTML='<div class="loading-msg" style="font-size:11px;color:#aaa;">No CGN departures found.<br>Station: Nyon, débarcadère de Rive</div>';
+        return;
+      }
+
+      list.innerHTML=boats.map((dep)=>{
         const dest=dep.to||'—';
         const schedDate=getSchedDate(dep);
         const sched=fmtHHMM(schedDate);
@@ -497,7 +556,7 @@
       const n=new Date(),pad=v=>String(v).padStart(2,'0');
       document.getElementById('boatUpdate').textContent='Updated '+pad(n.getHours())+':'+pad(n.getMinutes());
     }catch(e){
-      document.getElementById('boatsList').innerHTML='<div class="loading-msg">Cannot reach CGN API.</div>';
+      list.innerHTML='<div class="loading-msg">Cannot reach CGN API.</div>';
     }
   }
 
