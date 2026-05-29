@@ -284,7 +284,7 @@
       <span>Departure</span>
       <span>In</span>
       <span>Status</span>
-      <span style="text-align:center">Track</span>
+      <span style="text-align:center"><img src="https://icons.app.sbb.ch/icons/sa-p.svg" style="height:12px;width:auto;vertical-align:middle;margin-right:3px;opacity:0.7;">Track</span>
     </div>
 
     <div class="trains-list" id="trainsList">
@@ -317,7 +317,7 @@
         <span>Destination</span>
         <span>Departure</span>
         <span>In</span>
-        <span style="text-align:center"><img src="https://icons.app.sbb.ch/picto/jetty-right-blue.svg" style="height:14px;width:auto;vertical-align:middle;" alt="Quai"> Quai</span>
+        <span style="text-align:center"><img src="https://icons.app.sbb.ch/icons/sa-p.svg" style="height:14px;width:auto;vertical-align:middle;" alt="Quai"> Quai</span>
       </div>
 
       <div class="boats-list" id="boatsList">
@@ -458,7 +458,7 @@
           +'<div class="sched-time">'+sched+'</div>'
           +'<div><span class="countdown '+cd.cls+'" id="tcd-'+i+'">'+cd.text+'</span></div>'
           +'<div>'+statusHtml(delay,cancelled)+'</div>'
-          +'<div class="platform">'+plat+'</div>'
+          +'<div class="platform"><img src="https://icons.app.sbb.ch/icons/sa-p.svg" style="height:16px;width:auto;vertical-align:middle;margin-right:3px;opacity:0.6;">'+plat+'</div>'
           +'</div>'
           +'<div class="stops-inline" id="tstops-'+i+'">'+stopsHtml+'</div>'
           +'</div>';
@@ -570,12 +570,12 @@
         const sched=fmtHHMM(schedDate);
         const cd=countdown(schedDate);
         const plat=(dep.stop&&dep.stop.platform)?dep.stop.platform:'—';
-        const boatIcon='<img src="https://icons.app.sbb.ch/picto/boat-right-blue.svg" style="height:22px;width:auto;margin-right:8px;flex-shrink:0;" alt="CGN">';
+        const boatIcon='<img src="https://icons.app.sbb.ch/icons/bat.svg" style="height:22px;width:auto;margin-right:8px;flex-shrink:0;" alt="CGN">';
         return '<div class="boat-row">'
           +'<div class="boat-dest">'+boatIcon+dest+'</div>'
           +'<div class="boat-time">'+sched+'</div>'
           +'<div class="boat-in '+cd.cls+'">'+cd.text+'</div>'
-          +'<div class="boat-track">'+(plat&&plat!=='—'?'<img src="https://icons.app.sbb.ch/picto/jetty-right-blue.svg" style="height:14px;width:auto;vertical-align:middle;margin-right:2px;">'+plat:plat)+'</div>'
+          +'<div class="boat-track">'+(plat&&plat!=='—'?'<img src="https://icons.app.sbb.ch/icons/sa-p.svg" style="height:14px;width:auto;vertical-align:middle;margin-right:2px;">'+plat:plat)+'</div>'
           +'</div>';
       }).join('');
 
