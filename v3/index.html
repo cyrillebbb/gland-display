@@ -109,9 +109,9 @@
   .col-headers-train {
     background: #e8e8e8;
     display: grid;
-    grid-template-columns: 90px 1fr 100px 80px 100px 60px;
+    grid-template-columns: 95px 1fr 110px 85px 105px 65px;
     padding: 7px 24px;
-    font-size: 11px;
+    font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 1px;
     color: #666;
@@ -141,8 +141,8 @@
   .dep-block:last-child { border-bottom: none; }
   .departure-row {
     display: grid;
-    grid-template-columns: 90px 1fr 100px 80px 100px 60px;
-    padding: 8px 24px 4px 24px;
+    grid-template-columns: 95px 1fr 110px 85px 105px 65px;
+    padding: 11px 24px 4px 24px;
     align-items: center;
   }
   .stops-inline {
@@ -154,29 +154,29 @@
   }
 
   .stop-chip { display: flex; align-items: center; gap: 2px; white-space: nowrap; }
-  .stop-name { font-size: 10px; color: #999; }
+  .stop-name { font-size: 11px; color: #999; }
   .stop-sep { color: #ccc; font-size: 10px; margin: 0 4px; }
 
-  .line-icon img { height: 22px; width: auto; display: block; }
+  .line-icon img { height: 28px; width: auto; display: block; }
   .line-badge-fallback {
     display: inline-flex; align-items: center; justify-content: center;
     padding: 2px 6px; border-radius: 3px;
     font-weight: 700; font-size: 11px;
     background: #555; color: white;
   }
-  .destination { font-size: 16px; font-weight: 600; padding-left: 8px; padding-right: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .sched-time { font-size: 18px; font-weight: 300; font-variant-numeric: tabular-nums; }
-  .countdown { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .destination { font-size: 20px; font-weight: 600; padding-left: 8px; padding-right: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sched-time { font-size: 24px; font-weight: 300; font-variant-numeric: tabular-nums; }
+  .countdown { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
   .countdown.normal { color: #aaa; }
   .countdown.soon   { color: #FF9800; }
   .countdown.now    { color: #FF3D00; }
   .status-cell { display: flex; align-items: center; gap: 4px; }
   .status-icon { width: 14px; height: 14px; }
-  .status-text { font-size: 11px; font-weight: 600; }
+  .status-text { font-size: 13px; font-weight: 600; }
   .status-text.on-time { color: #4CAF50; }
   .status-text.delayed { color: #FF5722; }
   .status-text.cancelled { color: #FF1744; }
-  .platform { font-size: 14px; font-weight: 700; color: #333; text-align: center; }
+  .platform { font-size: 18px; font-weight: 700; color: #333; text-align: center; }
 
   /* ── Boat rows ── */
   .boats-list {
@@ -194,6 +194,14 @@
   .boat-row:last-child { border-bottom: none; }
   .boat-dest { font-size: 15px; font-weight: 600; color: #1a1a1a; display: flex; align-items: center; gap: 8px; }
   .boat-icon { font-size: 16px; }
+  .boat-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: #0079C2; color: white;
+    font-size: 10px; font-weight: 700;
+    padding: 2px 5px; border-radius: 3px;
+    margin-right: 6px; flex-shrink: 0;
+    letter-spacing: 0.5px;
+  }
   .boat-time { font-size: 18px; font-weight: 300; font-variant-numeric: tabular-nums; color: #1a1a1a; }
   .boat-in   { font-size: 12px; font-weight: 600; color: #aaa; font-variant-numeric: tabular-nums; }
   .boat-in.soon { color: #FF9800; }
@@ -539,14 +547,28 @@
         return;
       }
 
-      list.innerHTML=boats.map((dep)=>{
+      // Filter: only show departures within next 4 hours (240 min)
+      const now = Date.now();
+      const filteredBoats = boats.filter(dep => {
+        const d = getSchedDate(dep);
+        if (!d) return false;
+        const diff = Math.round((d - now) / 60000);
+        return diff >= -2 && diff <= 240;
+      });
+
+      if (!filteredBoats.length) {
+        list.innerHTML='<div class="loading-msg" style="font-size:12px;color:#aaa;">No more CGN departures today.</div>';
+        return;
+      }
+
+      list.innerHTML=filteredBoats.map((dep)=>{
         const dest=dep.to||'—';
         const schedDate=getSchedDate(dep);
         const sched=fmtHHMM(schedDate);
         const cd=countdown(schedDate);
         const plat=(dep.stop&&dep.stop.platform)?dep.stop.platform:'—';
         return'<div class="boat-row">'
-          +'<div class="boat-dest"><span class="boat-icon">⛵</span>'+dest+'</div>'
+          +'<div class="boat-dest"><img src="https://icons.app.sbb.ch/icons/bat.svg" onerror="this.src='https://icons.app.sbb.ch/icons/b.svg'" style="height:22px;width:auto;margin-right:8px;flex-shrink:0;" alt="CGN">'+dest+'</div>'
           +'<div class="boat-time">'+sched+'</div>'
           +'<div class="boat-in '+cd.cls+'">'+cd.text+'</div>'
           +'<div class="boat-track">'+plat+'</div>'
