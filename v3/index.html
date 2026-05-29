@@ -567,8 +567,9 @@
         const sched=fmtHHMM(schedDate);
         const cd=countdown(schedDate);
         const plat=(dep.stop&&dep.stop.platform)?dep.stop.platform:'—';
-        return'<div class="boat-row">'
-          +'<div class="boat-dest"><img src="https://icons.app.sbb.ch/icons/bat.svg" onerror="this.src='https://icons.app.sbb.ch/icons/b.svg'" style="height:22px;width:auto;margin-right:8px;flex-shrink:0;" alt="CGN">'+dest+'</div>'
+        const boatIcon='<img src="https://icons.app.sbb.ch/icons/bat.svg" style="height:22px;width:auto;margin-right:8px;flex-shrink:0;" alt="CGN">';
+        return '<div class="boat-row">'
+          +'<div class="boat-dest">'+boatIcon+dest+'</div>'
           +'<div class="boat-time">'+sched+'</div>'
           +'<div class="boat-in '+cd.cls+'">'+cd.text+'</div>'
           +'<div class="boat-track">'+plat+'</div>'
