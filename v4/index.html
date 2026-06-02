@@ -30,13 +30,16 @@
   .date-str { font-size: 10px; color: #888; margin-top: 2px; text-align: right; }
 
   .panel-header { padding: 7px 20px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-  .panel-header.bus    { background: #333333; }
+  .panel-header.bus    { background: #ffffff; border-bottom: 2px solid #e0e0e0; }
   .panel-header.boat   { background: #193B79; }
   .panel-header.alerts { background: #1a1a1a; }
   .panel-header-left { display: flex; align-items: center; gap: 10px; }
   .panel-title    { font-size: 15px; font-weight: 700; color: white; letter-spacing: 0.5px; }
+  .panel-title.dark { color: #1a1a1a; }
   .panel-subtitle { font-size: 10px; color: rgba(255,255,255,0.7); margin-top: 1px; }
+  .panel-subtitle.dark { color: #666; }
   .panel-update   { font-size: 10px; color: rgba(255,255,255,0.6); }
+  .panel-update.dark { color: #aaa; }
   .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #4CAF50; animation: pulse 2s infinite; display: inline-block; }
 
   .col-headers-train { background: #e8e8e8; display: grid; grid-template-columns: 95px 1fr 110px 85px 105px 65px; padding: 6px 24px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #666; border-bottom: 1px solid #ccc; flex-shrink: 0; }
@@ -148,10 +151,13 @@
     <div class="panel-b">
       <div class="panel-header bus">
         <div class="panel-header-left">
-          <img src="https://icons.app.sbb.ch/icons/bus.svg" style="height:26px;width:auto;filter:brightness(10);" alt="bus">
-          <div><div class="panel-title">Bus — Gland Gare</div><div class="panel-subtitle">Lines 811 · 830 · 831 · 835 · 836</div></div>
+          <img src="carpostal_logo.jpg" style="height:36px;width:auto;" alt="CarPostal">
+          <div>
+            <div class="panel-title dark">Bus — Gland Gare</div>
+            <div class="panel-subtitle dark">Lines 811 · 830 · 831 · 835 · 836</div>
+          </div>
         </div>
-        <div class="panel-update" id="busUpdate">Updating…</div>
+        <div class="panel-update dark" id="busUpdate">Updating…</div>
       </div>
       <div class="col-headers-bus"><span></span><span>Line</span><span>Destination</span><span>Departure</span><span>In</span></div>
       <div class="bus-list" id="busList"><div class="loading-msg"><span class="spinner"></span>Loading buses…</div></div>
@@ -386,7 +392,7 @@
         const cd=countdown(getSchedDate(dep));
         const isTUG = num==='831';
         const badgeCls = isTUG ? 'tug' : 'carpostal';
-        const busIcon='<img src="https://icons.app.sbb.ch/icons/bus.svg" style="height:18px;width:auto;" alt="bus">';
+        const busIcon='<img src="https://icons.app.sbb.ch/picto/bus-right.svg" style="height:18px;width:auto;" alt="bus">';
         return'<div class="bus-row"><div class="bus-icon-cell">'+busIcon+'</div><div><span class="bus-line-badge '+badgeCls+'">'+num+'</span></div><div class="bus-dest">'+dest+'</div><div class="bus-time">'+fmtHHMM(getSchedDate(dep))+'</div><div class="bus-in '+cd.cls+'">'+cd.text+'</div></div>';
       }).join('');
       const n=new Date(),pad=v=>String(v).padStart(2,'0');
