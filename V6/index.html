@@ -76,8 +76,9 @@
 
   .panel-header { flex-shrink:0; display:flex; align-items:center; justify-content:space-between; }
   .panel-header.train {
-    height:76px; padding:0 24px; color:#fff;
-    background:linear-gradient(90deg,var(--sbb-red),var(--sbb-dark-red));
+    height:76px; padding:0 24px; color:#1a1a1a;
+    background:#ffffff;
+    border-bottom:3px solid var(--sbb-red);
   }
   .panel-header.bus {
     height:74px; padding:0 22px;
@@ -93,6 +94,7 @@
   }
   .panel-header-left { display:flex; align-items:center; gap:16px; min-width:0; }
   .panel-title { font-size:26px; line-height:28px; font-weight:900; letter-spacing:-.35px; color:inherit; white-space:nowrap; }
+  .panel-header.train .panel-title { color:#1a1a1a; }
   .panel-title.dark { color:#111; }
   .panel-subtitle { font-size:14px; color:rgba(255,255,255,.82); margin-top:3px; font-weight:700; }
   .panel-subtitle.dark { color:#202020; }
@@ -212,12 +214,12 @@
 <div class="layout">
   <header class="top-header">
     <div class="brand-zone">
-      <img class="sbb-logo-img" src="sbb_logo.jpeg" alt="SBB CFF FFS">
-      <div class="header-divider"></div>
       <div class="station-cluster">
-        <div>
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2.5px;color:#9aa5b4;line-height:1;">Public Transport</div>
+        <div style="display:flex;align-items:center;gap:20px;">
+          <div style="font-size:20px;font-weight:900;text-transform:uppercase;letter-spacing:2px;color:#4a5568;">Public Transport</div>
+          <div style="width:1px;height:28px;background:#D4DAE3;"></div>
           <div class="station-name">Gland</div>
+          <div style="width:1px;height:28px;background:#D4DAE3;"></div>
           <div class="date-str" id="dateStr">--</div>
         </div>
       </div>
@@ -230,8 +232,9 @@
   <section class="panel panel-a">
     <div class="panel-header train">
       <div class="panel-header-left">
-        <img src="sbb_logo.jpeg" style="height:28px;width:auto;filter:brightness(0) invert(1);" alt="SBB CFF FFS">
-        <div class="panel-title">Trains au départ</div>
+        <img src="sbb_logo.jpeg" style="height:30px;width:auto;" alt="SBB CFF FFS">
+        <div style="width:1px;height:28px;background:#D4DAE3;margin:0 4px;"></div>
+        <div class="panel-title">Train Station</div>
       </div>
     </div>
     <div class="col-headers-train">
