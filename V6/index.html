@@ -51,6 +51,7 @@
     display:flex; align-items:center; justify-content:space-between;
     padding:0 28px;
     overflow:hidden;
+    position:relative;
   }
   .brand-zone { display:flex; align-items:center; gap:22px; min-width:600px; }
   .sbb-logo-img { height:34px; width:auto; display:block; }
@@ -86,7 +87,7 @@
   }
   .panel-header.boat {
     height:74px; padding:0 22px; color:#fff;
-    background:linear-gradient(135deg,#244F96 0%, var(--cgn-blue) 70%, #0F2C64 100%);
+    background:linear-gradient(135deg,#0F2C64 0%, var(--cgn-blue) 30%, #244F96 100%);
   }
   .panel-header.alerts {
     height:42px; padding:0 24px; color:#101828;
@@ -220,7 +221,7 @@
       </div>
     </div>
     <div class="clock-wrap" style="flex-direction:row;align-items:center;gap:20px;">
-      <div class="date-str" id="dateStr" style="font-size:14px;color:#6b7280;font-weight:600;white-space:nowrap;">--</div>
+      <div class="date-str" id="dateStr" style="font-size:22px;color:#4a5568;font-weight:700;white-space:nowrap;">--</div>
       <div style="width:1px;height:28px;background:#D4DAE3;"></div>
       <div class="clock" id="clock">--:--:--</div>
     </div>
@@ -249,7 +250,7 @@
             <img src="carpostal_logo.jpg" style="height:36px;width:auto;" alt="CarPostal">
             <div><div class="panel-title dark">Gland Gare Nord &amp; Sud</div></div>
           </div>
-          <div class="panel-update dark" id="busUpdate">--</div>
+          
         </div>
         <div class="col-headers-bus"><span></span><span>Line</span><span>Destination</span><span>Dep.</span><span>In</span></div>
         <div class="bus-list" id="busList"><div class="loading-msg"><span class="spinner"></span>Loading…</div></div>
@@ -261,7 +262,7 @@
             <img src="cgn_logo.png" style="height:27px;width:auto;" alt="CGN">
             <div><div class="panel-title">Nyon Port</div><div class="panel-subtitle">Lac Léman departures</div></div>
           </div>
-          <div class="panel-update" id="boatUpdate">--</div>
+          
         </div>
         <div class="col-headers-boat"><span></span><span>Line</span><span>Destination</span><span>Dep.</span><span>In</span></div>
         <div class="boats-list" id="boatsList"><div class="loading-msg"><span class="spinner"></span>Loading…</div></div>
@@ -457,7 +458,7 @@
           +'</div>';
       }).join('');
       const n=new Date(),pad=v=>String(v).padStart(2,'0');
-      document.getElementById('busUpdate').textContent=pad(n.getHours())+':'+pad(n.getMinutes());
+      // busUpdate removed
     }catch(e){list.innerHTML='<div class="loading-msg">Cannot reach bus API.</div>';}
   }
 
@@ -498,7 +499,7 @@
           +'</div>';
       }).join('');
       const n=new Date(),pad=v=>String(v).padStart(2,'0');
-      document.getElementById('boatUpdate').textContent=pad(n.getHours())+':'+pad(n.getMinutes());
+      // boatUpdate removed
     }catch(e){list.innerHTML='<div class="loading-msg">Cannot reach CGN API.</div>';}
   }
 
