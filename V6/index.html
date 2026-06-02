@@ -273,7 +273,7 @@
   <section class="panel panel-e">
     <div class="panel-header alerts">
       <div class="panel-header-left"><div class="live-dot" id="alertDot"></div><div style="font-size:24px;">⚠️</div><div class="panel-title" style="font-size:22px;color:#111827;">Traffic Information</div></div>
-      <div class="panel-update dark" id="alertUpdate">--</div>
+      <div class="panel-update dark" id="alertUpdate" style="font-size:13px;font-weight:600;color:#6b7280;">Last update: --</div>
     </div>
     <div class="alerts-scroll" id="alertsContent"><div class="no-alerts">No disruptions on the network</div></div>
   </section>
@@ -509,7 +509,7 @@
       const dot=document.getElementById('alertDot');
       const upd=document.getElementById('alertUpdate');
       const n=new Date(),pad=v=>String(v).padStart(2,'0');
-      upd.textContent=pad(n.getHours())+':'+pad(n.getMinutes());
+      upd.textContent='Last update: '+pad(n.getHours())+':'+pad(n.getMinutes());
       if(!alerts.length){
         dot.style.background='#4CAF50';
         content.innerHTML='<div class="no-alerts">No disruptions on the network</div>';
