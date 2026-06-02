@@ -119,8 +119,8 @@
     display:grid; align-items:center; border-bottom:1px solid var(--line);
     background:#FAFBFC; font-size:13px; font-weight:800; color:#111827;
   }
-  .col-headers-bus { grid-template-columns:36px 68px 1fr 90px 80px 110px; }
-  .col-headers-boat { grid-template-columns:36px 62px 1fr 90px 80px 110px; }
+  .col-headers-bus { grid-template-columns:80px 1fr 106px 88px 118px 68px; }
+  .col-headers-boat { grid-template-columns:80px 1fr 106px 88px 118px 68px; }
 
   .trains-list { flex:1; overflow:hidden; background:#fff; }
   .dep-block { border-bottom:1px solid #EDF0F4; }
@@ -152,8 +152,8 @@
   .bus-row,.boat-row {
     min-height:58px; display:grid; align-items:center; padding:8px 22px; border-bottom:1px solid #F0F2F5;
   }
-  .bus-row { grid-template-columns:36px 68px 1fr 90px 80px 110px; }
-  .boat-row { grid-template-columns:36px 62px 1fr 90px 80px 110px; }
+  .bus-row { grid-template-columns:80px 1fr 106px 88px 118px 68px; }
+  .boat-row { grid-template-columns:80px 1fr 106px 88px 118px 68px; }
   .bus-row:last-child,.boat-row:last-child { border-bottom:none; }
   .bus-icon-cell,.boat-icon-cell { display:flex; align-items:center; justify-content:flex-start; }
   .bus-icon-cell img,.boat-icon-cell img { height:18px !important; width:auto; }
@@ -252,7 +252,7 @@
           </div>
           
         </div>
-        <div class="col-headers-bus"><span></span><span>Line</span><span>Destination</span><span>Dep.</span><span>In</span><span>Status</span></div>
+        <div class="col-headers-bus"><span>Line</span><span>Destination</span><span>Dep.</span><span>In</span><span>Status</span><span></span></div>
         <div class="bus-list" id="busList"><div class="loading-msg"><span class="spinner"></span>Loading…</div></div>
       </section>
 
@@ -264,7 +264,7 @@
           </div>
           
         </div>
-        <div class="col-headers-boat"><span></span><span>Line</span><span>Destination</span><span>Dep.</span><span>In</span><span>Status</span></div>
+        <div class="col-headers-boat"><span>Line</span><span>Destination</span><span>Dep.</span><span>In</span><span>Status</span><span></span></div>
         <div class="boats-list" id="boatsList"><div class="loading-msg"><span class="spinner"></span>Loading…</div></div>
       </section>
     </div>
@@ -450,8 +450,7 @@
         const cd=countdown(getSchedDate(dep));
         const badgeCls=num==='831'?'tug':'carpostal';
         return'<div class="bus-row">'
-          +'<div class="bus-icon-cell">'+busIcon+'</div>'
-          +'<div><span class="bus-line-badge '+badgeCls+'">'+num+'</span></div>'
+          +'<div class="bus-icon-cell" style="gap:6px;">'+busIcon+'<span class="bus-line-badge '+badgeCls+'">'+num+'</span></div>'
           +'<div class="bus-dest">'+dest+'</div>'
           +'<div class="bus-time">'+fmtHHMM(getSchedDate(dep))+'</div>'
           +'<div class="bus-in '+cd.cls+'">'+cd.text+'</div>'
@@ -492,8 +491,7 @@
         const lineNum=(dep.number||dep.name||dep.category||'').replace(/^0+/,'');
         const lineBadge=lineNum?'<span class="boat-line-badge">'+lineNum+'</span>':'';
         return'<div class="boat-row">'
-          +'<div class="boat-icon-cell">'+boatIcon+'</div>'
-          +'<div>'+lineBadge+'</div>'
+          +'<div class="boat-icon-cell" style="gap:6px;">'+boatIcon+lineBadge+'</div>'
           +'<div class="boat-dest">'+dest+'</div>'
           +'<div class="boat-time">'+fmtHHMM(getSchedDate(dep))+'</div>'
           +'<div class="boat-in '+cd.cls+'">'+cd.text+'</div>'
