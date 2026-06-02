@@ -56,12 +56,6 @@
   .sbb-logo-img { height:34px; width:auto; display:block; }
   .header-divider { width:2px; height:36px; background:#D4DAE3; }
   .station-cluster { display:flex; align-items:center; gap:16px; }
-  .station-train-icon {
-    width:46px; height:46px; border-radius:12px; background:var(--sbb-red);
-    display:flex; align-items:center; justify-content:center;
-    box-shadow:0 8px 18px rgba(235,0,0,.18);
-  }
-  .station-train-icon img { width:32px; height:32px; filter:brightness(0) invert(1); }
   .station-name { font-size:36px; line-height:34px; font-weight:900; letter-spacing:-.7px; }
   .date-str { font-size:14px; color:var(--muted); margin-top:5px; font-weight:600; }
   .clock-wrap { display:flex; align-items:center; gap:16px; }
@@ -115,7 +109,6 @@
     display:grid; grid-template-columns:112px 1fr 106px 88px 118px 68px; align-items:center;
     background:var(--sbb-red); color:white; font-size:15px; font-weight:900;
   }
-  .col-headers-train span:first-child,
   .col-headers-train span:nth-child(2) { visibility:hidden; }
 
   .col-headers-bus, .col-headers-boat {
@@ -222,15 +215,14 @@
       <img class="sbb-logo-img" src="sbb_logo.jpeg" alt="SBB CFF FFS">
       <div class="header-divider"></div>
       <div class="station-cluster">
-        <div class="station-train-icon"><img src="https://icons.app.sbb.ch/picto/train-right.svg" alt="Train"></div>
         <div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2.5px;color:#9aa5b4;line-height:1;">Public Transport</div>
           <div class="station-name">Gland</div>
           <div class="date-str" id="dateStr">--</div>
         </div>
       </div>
     </div>
     <div class="clock-wrap">
-      <div class="clock-icon">◷</div>
       <div class="clock" id="clock">--:--:--</div>
     </div>
   </header>
@@ -238,7 +230,7 @@
   <section class="panel panel-a">
     <div class="panel-header train">
       <div class="panel-header-left">
-        <img class="panel-header-icon white" src="https://icons.app.sbb.ch/picto/train-right.svg" alt="Train">
+        <img src="sbb_logo.jpeg" style="height:28px;width:auto;filter:brightness(0) invert(1);" alt="SBB CFF FFS">
         <div class="panel-title">Trains au départ</div>
       </div>
     </div>
