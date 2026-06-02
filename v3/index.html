@@ -14,8 +14,6 @@
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     color: #1a1a1a;
   }
-
-  /* ── Main layout ── */
   .layout {
     width: 1920px;
     height: 1080px;
@@ -23,8 +21,6 @@
     grid-template-columns: 60% 40%;
     grid-template-rows: 1fr;
   }
-
-  /* ── Panel A — Trains Gland (left, full height) ── */
   .panel-a {
     display: flex;
     flex-direction: column;
@@ -32,15 +28,11 @@
     height: 1080px;
     overflow: hidden;
   }
-
-  /* ── Right side ── */
   .panel-right {
     display: flex;
     flex-direction: column;
     height: 1080px;
   }
-
-  /* ── Panel B — Bateaux CGN (right top, 60%) ── */
   .panel-b {
     height: 60%;
     display: flex;
@@ -48,8 +40,6 @@
     border-bottom: 3px solid #e0e0e0;
     overflow: hidden;
   }
-
-  /* ── Panel C — Alertes trafic (right bottom, 40%) ── */
   .panel-c {
     height: 40%;
     display: flex;
@@ -57,20 +47,6 @@
     overflow: hidden;
     background: #f9f9f9;
   }
-
-  /* ── Panel headers ── */
-  .panel-header {
-    background: #ffffff;
-    padding: 10px 20px 8px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 2px solid #e0e0e0;
-    flex-shrink: 0;
-  }
-  .panel-header.red { background: #EB0000; }
-
-  /* ── Main header (panel A) ── */
   .main-header {
     background: #ffffff;
     padding: 12px 24px;
@@ -83,16 +59,11 @@
   }
   .header-left { display: flex; align-items: center; gap: 16px; }
   .sbb-logo-img { height: 28px; width: auto; display: block; }
-  .header-center {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-  }
+  .header-center { position: absolute; left: 50%; transform: translateX(-50%); }
   .station-name { font-size: 36px; font-weight: 700; color: #1a1a1a; }
   .clock { font-size: 26px; font-weight: 300; font-variant-numeric: tabular-nums; letter-spacing: 2px; color: #1a1a1a; text-align: right; }
   .date-str { font-size: 10px; color: #888; margin-top: 2px; text-align: right; }
 
-  /* ── Panel B header ── */
   .boat-header {
     background: #193B79;
     padding: 10px 20px;
@@ -105,7 +76,6 @@
   .boat-subtitle { font-size: 11px; color: rgba(255,255,255,0.8); }
   .boat-clock { font-size: 11px; color: rgba(255,255,255,0.7); text-align: right; }
 
-  /* ── Column headers ── */
   .col-headers-train {
     background: #e8e8e8;
     display: grid;
@@ -121,22 +91,17 @@
   .col-headers-boat {
     background: #eef0f5;
     display: grid;
-    grid-template-columns: 1fr 90px 80px 60px;
+    grid-template-columns: 50px 50px 1fr 90px 80px 60px;
     padding: 7px 20px;
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 1px;
     color: #193B79;
-    border-bottom: 1px solid #b3d9f5;
+    border-bottom: 1px solid #c5cde0;
     flex-shrink: 0;
   }
 
-  /* ── Train rows ── */
-  .trains-list {
-    flex: 1;
-    overflow: hidden;
-    background: #ffffff;
-  }
+  .trains-list { flex: 1; overflow: hidden; background: #ffffff; }
   .dep-block { border-bottom: 1px solid #ddd; }
   .dep-block:last-child { border-bottom: none; }
   .departure-row {
@@ -152,7 +117,6 @@
     padding: 0 24px 9px 122px;
     gap: 0;
   }
-
   .stop-chip { display: flex; align-items: center; gap: 2px; white-space: nowrap; }
   .stop-name { font-size: 14px; color: #777; }
   .stop-sep { color: #ccc; font-size: 14px; margin: 0 5px; }
@@ -178,37 +142,31 @@
   .status-text.cancelled { color: #FF1744; }
   .platform { font-size: 18px; font-weight: 700; color: #333; text-align: center; }
 
-  /* ── Boat rows ── */
-  .boats-list {
-    flex: 1;
-    overflow: hidden;
-    background: #ffffff;
-  }
+  /* Boat rows — 6 columns: icon | line badge | destination | departure | in | quai */
+  .boats-list { flex: 1; overflow: hidden; background: #ffffff; }
   .boat-row {
     display: grid;
-    grid-template-columns: 1fr 90px 80px 60px;
-    padding: 9px 20px;
-    border-bottom: 1px solid #e8f4fd;
+    grid-template-columns: 50px 50px 1fr 90px 80px 60px;
+    padding: 10px 20px;
+    border-bottom: 1px solid #eef0f5;
     align-items: center;
   }
   .boat-row:last-child { border-bottom: none; }
-  .boat-dest { font-size: 20px; font-weight: 600; color: #1a1a1a; display: flex; align-items: center; gap: 8px; }
-  .boat-icon { font-size: 16px; }
-  .boat-badge {
+  .boat-icon-cell { display: flex; align-items: center; }
+  .boat-line-badge {
     display: inline-flex; align-items: center; justify-content: center;
     background: #193B79; color: white;
-    font-size: 10px; font-weight: 700;
-    padding: 2px 5px; border-radius: 3px;
-    margin-right: 6px; flex-shrink: 0;
-    letter-spacing: 0.5px;
+    font-size: 11px; font-weight: 700;
+    padding: 3px 6px; border-radius: 3px;
+    letter-spacing: 0.5px; white-space: nowrap;
   }
+  .boat-dest { font-size: 20px; font-weight: 600; color: #1a1a1a; padding-left: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .boat-time { font-size: 24px; font-weight: 300; font-variant-numeric: tabular-nums; color: #1a1a1a; }
-  .boat-in   { font-size: 12px; font-weight: 600; color: #aaa; font-variant-numeric: tabular-nums; }
+  .boat-in   { font-size: 14px; font-weight: 600; color: #aaa; font-variant-numeric: tabular-nums; }
   .boat-in.soon { color: #FF9800; }
   .boat-in.now  { color: #FF3D00; }
   .boat-track { font-size: 13px; font-weight: 700; color: #193B79; text-align: center; }
 
-  /* ── Panel C — Alerts ── */
   .alert-panel-header {
     background: #1a1a1a;
     padding: 10px 20px;
@@ -220,15 +178,8 @@
   .alert-panel-title { font-size: 14px; font-weight: 700; color: white; text-transform: uppercase; letter-spacing: 1px; }
   .alert-panel-dot { width: 8px; height: 8px; border-radius: 50%; background: #4CAF50; animation: pulse 2s infinite; }
   .alerts-content { flex: 1; overflow: hidden; padding: 0; }
-  .no-alerts {
-    display: flex; align-items: center; justify-content: center;
-    height: 100%; font-size: 14px; color: #bbb; font-style: italic;
-  }
-  .alert-item {
-    display: flex; align-items: flex-start; gap: 10px;
-    padding: 10px 20px;
-    border-bottom: 1px solid rgba(0,0,0,0.06);
-  }
+  .no-alerts { display: flex; align-items: center; justify-content: center; height: 100%; font-size: 14px; color: #bbb; font-style: italic; }
+  .alert-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 20px; border-bottom: 1px solid rgba(0,0,0,0.06); }
   .alert-item.alert-warning  { background: #FFF8E1; border-left: 5px solid #FF9800; }
   .alert-item.alert-critical { background: #FFEBEE; border-left: 5px solid #F44336; }
   .alert-item.alert-info     { background: #E3F2FD; border-left: 5px solid #2196F3; }
@@ -236,7 +187,6 @@
   .alert-head-c { font-size: 13px; font-weight: 700; color: #1a1a1a; line-height: 1.3; }
   .alert-desc-c { font-size: 11px; color: #555; margin-top: 3px; line-height: 1.3; }
 
-  /* ── Footer ── */
   .footer {
     padding: 4px 24px;
     display: flex;
@@ -248,14 +198,8 @@
     background: white;
   }
   .live-dot { width: 6px; height: 6px; border-radius: 50%; background: #4CAF50; animation: pulse 2s infinite; display: inline-block; margin-right: 5px; vertical-align: middle; }
-
   .loading-msg { padding: 20px; text-align: center; color: #aaa; font-size: 13px; }
-  .spinner {
-    display: inline-block; width: 16px; height: 16px;
-    border: 2px solid #ccc; border-top-color: #EB0000;
-    border-radius: 50%; animation: spin 0.8s linear infinite;
-    vertical-align: middle; margin-right: 8px;
-  }
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #ccc; border-top-color: #EB0000; border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 8px; }
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.25} }
 </style>
@@ -277,7 +221,6 @@
         <div class="date-str" id="dateStr">--</div>
       </div>
     </div>
-
     <div class="col-headers-train">
       <span>Line</span>
       <span>Destination</span>
@@ -286,11 +229,9 @@
       <span>Status</span>
       <span style="text-align:center">Track</span>
     </div>
-
     <div class="trains-list" id="trainsList">
       <div class="loading-msg"><span class="spinner"></span>Loading departures…</div>
     </div>
-
     <div class="footer">
       <span><span class="live-dot"></span><span id="lastUpdateTrain">Updating…</span></span>
       <span>transport.opendata.ch</span>
@@ -312,14 +253,14 @@
         </div>
         <div class="boat-clock" id="boatUpdate">Updating…</div>
       </div>
-
       <div class="col-headers-boat">
+        <span></span>
+        <span>Line</span>
         <span>Destination</span>
         <span>Departure</span>
         <span>In</span>
         <span style="text-align:center">Quai</span>
       </div>
-
       <div class="boats-list" id="boatsList">
         <div class="loading-msg"><span class="spinner"></span>Loading boats…</div>
       </div>
@@ -343,7 +284,6 @@
   const ICON_BASE = 'https://icons.app.sbb.ch/icons/';
   const WORKER_URL = 'https://gland-alerts.cyrille-baptiste.workers.dev';
 
-  // ── Clock ──
   function updateClock() {
     const n = new Date(), pad = v => String(v).padStart(2,'0');
     document.getElementById('clock').textContent = pad(n.getHours())+':'+pad(n.getMinutes())+':'+pad(n.getSeconds());
@@ -353,7 +293,6 @@
   }
   setInterval(updateClock,1000); updateClock();
 
-  // ── Helpers ──
   function tsToDate(val){
     if(val==null)return null;
     if(typeof val==='number')return new Date(val*1000);
@@ -387,7 +326,6 @@
     return'<div class="status-cell"><span class="status-text on-time">On time</span></div>';
   }
 
-  // ── Stops cache ──
   const stopsCache={};
   async function fetchStopsForDep(dep){
     const passList=dep.passList||(dep.stop&&dep.stop.passList)||null;
@@ -458,13 +396,12 @@
           +'<div class="sched-time">'+sched+'</div>'
           +'<div><span class="countdown '+cd.cls+'" id="tcd-'+i+'">'+cd.text+'</span></div>'
           +'<div>'+statusHtml(delay,cancelled)+'</div>'
-          +'<div class="platform">'+(plat&&plat!=='—'?'<img src="https://icons.app.sbb.ch/picto/tracks-'+plat+'-fr-small.svg" style="height:24px;width:auto;" alt="'+plat+'">'  :plat)+'</div>'
+          +'<div class="platform">'+(plat&&plat!=='—'?'<img src="https://icons.app.sbb.ch/picto/tracks-'+plat+'-fr-small.svg" style="height:24px;width:auto;" alt="'+plat+'">':plat)+'</div>'
           +'</div>'
           +'<div class="stops-inline" id="tstops-'+i+'">'+stopsHtml+'</div>'
           +'</div>';
       }).join('');
 
-      // Fetch stops async
       trainsData.forEach(async(dep,i)=>{
         const key=(dep.category||'')+(dep.number||'')+(dep.departure||'');
         if(!stopsCache[key]){
@@ -483,17 +420,11 @@
   }
 
   // ═══════════ PANEL B — BATEAUX CGN ═══════════
-  // Try multiple station name variants for Nyon CGN port
   const CGN_STATION_NAMES = [
-    'Nyon (Lac)',
-    'Nyon, Lac',
-    'Nyon lac',
-    'Nyon, débarcadère',
-    'Nyon, CGN',
+    'Nyon (Lac)', 'Nyon, Lac', 'Nyon lac', 'Nyon, débarcadère', 'Nyon, CGN',
   ];
 
   async function fetchBoatDepartures() {
-    // First try each station name
     for (const name of CGN_STATION_NAMES) {
       const url = 'https://transport.opendata.ch/v1/stationboard?station='+encodeURIComponent(name)+'&limit=7&type=departure';
       try {
@@ -502,20 +433,15 @@
         const data = await r.json();
         const boats = (data.stationboard||[]).filter(d => {
           const cat = (d.category||'').toUpperCase();
-          // Only keep boat/ship departures
           return cat === 'BAT' || cat === 'BOAT' || cat === 'SCHIFF' || cat.includes('BAT') ||
                  (d.name||'').toLowerCase().includes('cgn') ||
                  (d.operator||'').toLowerCase().includes('cgn') ||
                  (d.operator||'').toLowerCase().includes('navigation');
         });
         if (boats.length > 0) return { boats, stationName: data.station?.name || name };
-
-        // Even if no boat filter match, if stationboard has results use them
         if ((data.stationboard||[]).length > 0) return { boats: data.stationboard.slice(0,7), stationName: data.station?.name || name };
       } catch(e) { continue; }
     }
-
-    // Fallback: search for station then use its ID
     try {
       const sr = await fetch('https://transport.opendata.ch/v1/locations?query=Nyon+bateau&type=station');
       if (sr.ok) {
@@ -532,25 +458,19 @@
             return { boats: d2.stationboard||[], stationName: cgn.name };
           }
         }
-        // Log what we found for debugging
-        console.log('Stations found:', stations.map(s=>s.name+' ('+s.id+')').join(', '));
       }
     } catch(e) {}
-
     return { boats: [], stationName: null };
   }
 
   async function refreshBoats(){
     const list = document.getElementById('boatsList');
     try{
-      const { boats, stationName } = await fetchBoatDepartures();
-
+      const { boats } = await fetchBoatDepartures();
       if(!boats.length){
-        list.innerHTML='<div class="loading-msg" style="font-size:11px;color:#aaa;">No CGN departures found.<br>Station: Nyon, débarcadère de Rive</div>';
+        list.innerHTML='<div class="loading-msg" style="font-size:11px;color:#aaa;">No CGN departures found.</div>';
         return;
       }
-
-      // Filter: only show departures within next 4 hours (240 min)
       const now = Date.now();
       const filteredBoats = boats.filter(dep => {
         const d = getSchedDate(dep);
@@ -558,21 +478,31 @@
         const diff = Math.round((d - now) / 60000);
         return diff >= -2 && diff <= 240;
       });
-
       if (!filteredBoats.length) {
         list.innerHTML='<div class="loading-msg" style="font-size:12px;color:#aaa;">No more CGN departures today.</div>';
         return;
       }
 
       list.innerHTML=filteredBoats.map((dep)=>{
-        const dest=dep.to||'—';
-        const schedDate=getSchedDate(dep);
-        const sched=fmtHHMM(schedDate);
-        const cd=countdown(schedDate);
-        const plat=(dep.stop&&dep.stop.platform)?dep.stop.platform:'—';
-        const boatIcon='<img src="https://icons.app.sbb.ch/picto/jetty-right.svg" style="height:22px;width:auto;margin-right:8px;flex-shrink:0;" alt="CGN">';
+        const dest      = dep.to || '—';
+        const schedDate = getSchedDate(dep);
+        const sched     = fmtHHMM(schedDate);
+        const cd        = countdown(schedDate);
+        const plat      = (dep.stop&&dep.stop.platform) ? dep.stop.platform : '—';
+
+        // Line number — try number, then name, then category
+        const lineNum   = dep.number || dep.name || dep.category || '';
+        const lineLabel = lineNum ? lineNum.replace(/^0+/,'') : ''; // strip leading zeros
+
+        const boatIcon  = '<img src="https://icons.app.sbb.ch/picto/jetty-right.svg" style="height:22px;width:auto;" alt="boat">';
+        const lineBadge = lineLabel
+          ? '<span class="boat-line-badge">'+lineLabel+'</span>'
+          : '';
+
         return '<div class="boat-row">'
-          +'<div class="boat-dest">'+boatIcon+dest+'</div>'
+          +'<div class="boat-icon-cell">'+boatIcon+'</div>'
+          +'<div>'+lineBadge+'</div>'
+          +'<div class="boat-dest">'+dest+'</div>'
           +'<div class="boat-time">'+sched+'</div>'
           +'<div class="boat-in '+cd.cls+'">'+cd.text+'</div>'
           +'<div class="boat-track">'+plat+'</div>'
@@ -586,12 +516,6 @@
     }
   }
 
-  // Countdown refresh for boats
-  let boatsRawData=[];
-  setInterval(()=>{
-    // simple re-render not needed — boats refresh every 60s
-  },10000);
-
   // ═══════════ PANEL C — ALERTES ═══════════
   async function refreshAlerts(){
     try{
@@ -601,13 +525,11 @@
       const alerts=(data.alerts||[]).filter(a=>a.header&&a.header.trim()!=='');
       const content=document.getElementById('alertsContent');
       const dot=document.getElementById('alertDot');
-
       if(!alerts.length){
         dot.style.background='#4CAF50';
         content.innerHTML='<div class="no-alerts">No disruptions on the network</div>';
         return;
       }
-
       dot.style.background='#FF5722';
       content.innerHTML=alerts.slice(0,3).map(a=>{
         const cause=a.cause||'';
@@ -623,16 +545,12 @@
           +(shortDesc?'<div class="alert-desc-c">'+shortDesc+'</div>':'')
           +'</div></div>';
       }).join('');
-    }catch(e){
-      // silently fail
-    }
+    }catch(e){}
   }
 
-  // ═══════════ Init & timers ═══════════
   refreshTrains();
   refreshBoats();
   refreshAlerts();
-
   setInterval(refreshTrains, 30000);
   setInterval(refreshBoats,  30000);
   setInterval(refreshAlerts, 120000);
