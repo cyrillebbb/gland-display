@@ -4,389 +4,352 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=1920, height=1080">
 <title>Gland — Transport Display V6</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<!-- Leaflet.js for OpenStreetMap -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <style>
+  :root {
+    --sbb-red: #EB0000;
+    --sbb-red-dark: #C90012;
+    --post-yellow: #FFCC00;
+    --cgn-blue: #193B79;
+    --ink: #111827;
+    --muted: #6B7280;
+    --line: #E5E7EB;
+    --soft: #F5F6F8;
+    --card: #FFFFFF;
+    --radius: 16px;
+    --shadow: 0 8px 28px rgba(15, 23, 42, .08);
+  }
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
-
   html, body {
-    width: 1920px; height: 1080px;
+    width: 1920px;
+    height: 1080px;
     overflow: hidden;
-    background: #f4f6f8;
-    font-family: 'Barlow', sans-serif;
-    color: #1a1a1a;
+    background: var(--soft);
+    font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: var(--ink);
   }
 
-  /* ══════════════════════════════════════
-     LAYOUT
-     Header: 72px
-     Body:   908px (trains left | bus+cgn+map right)
-     Footer: 100px (alerts)
-  ══════════════════════════════════════ */
-  .page { width: 1920px; height: 1080px; display: flex; flex-direction: column; }
+  .layout {
+    width: 1920px;
+    height: 1080px;
+    display: grid;
+    grid-template-columns: 960px 960px;
+    gap: 16px;
+    padding: 14px;
+  }
 
-  /* ── HEADER ── */
-  .header {
-    height: 72px; flex-shrink: 0;
-    background: #ffffff;
-    border-bottom: 1px solid #e0e4ea;
-    display: flex; align-items: center;
-    padding: 0 32px;
+  .col-left,
+  .col-right {
+    height: 1052px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    border: none;
+  }
+
+  .panel-a,
+  .panel-b,
+  .panel-c,
+  .panel-d,
+  .panel-e {
+    background: var(--card);
+    border: 1px solid rgba(17, 24, 39, .08);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .panel-a { flex: 0 0 760px; display: flex; flex-direction: column; }
+  .panel-e { flex: 1; display: flex; flex-direction: column; }
+  .row-top-right { flex: 0 0 300px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; border: none; }
+  .panel-b, .panel-c { display: flex; flex-direction: column; border-right: none; }
+  .panel-d { flex: 1; position: relative; }
+  #map { width: 100%; height: 100%; filter: saturate(.75) contrast(.98); }
+
+  .main-header {
+    height: 76px;
+    padding: 12px 24px;
+    background: rgba(255,255,255,.96);
+    display: flex;
+    align-items: center;
     justify-content: space-between;
-    position: relative;
+    border-bottom: 1px solid var(--line);
+    flex-shrink: 0;
   }
-  .header-left { display: flex; align-items: center; gap: 20px; }
-  .header-divider { width: 1px; height: 36px; background: #d0d5dd; }
-  .sbb-logo { height: 32px; width: auto; }
-  .station-block { }
-  .station-name { font-family: 'Barlow Condensed', sans-serif; font-size: 32px; font-weight: 800; color: #0D1B2A; letter-spacing: 0.5px; line-height: 1; }
-  .station-date { font-size: 12px; color: #7a8899; margin-top: 2px; font-weight: 400; }
-  .header-clock {
-    display: flex; align-items: baseline; gap: 2px;
-    font-family: 'Barlow Condensed', sans-serif;
+  .header-left { display: flex; align-items: center; gap: 18px; }
+  .sbb-logo-img { height: 34px; width: auto; }
+  .header-center {
+    position: static;
+    transform: none;
+    margin-left: 26px;
+    padding-left: 26px;
+    border-left: 2px solid #D1D5DB;
+    flex: 1;
   }
-  .clock-icon { font-size: 18px; margin-right: 8px; opacity: 0.5; }
-  .clock-hhmm { font-size: 44px; font-weight: 700; color: #0D1B2A; font-variant-numeric: tabular-nums; letter-spacing: 1px; }
-  .clock-ss { font-size: 28px; font-weight: 400; color: #EB0000; font-variant-numeric: tabular-nums; }
+  .station-name { font-size: 34px; line-height: 1; font-weight: 800; letter-spacing: -.6px; }
+  .clock { font-size: 46px; line-height: .95; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: 1px; color: #050505; }
+  .clock::before { content: "◷"; font-size: 28px; font-weight: 400; color: #6B7280; margin-right: 14px; vertical-align: 6px; }
+  .date-str { font-size: 14px; color: var(--muted); margin-top: 5px; text-align: right; }
 
-  /* ── BODY ── */
-  .body { flex: 1; display: grid; grid-template-columns: 728px 1fr; overflow: hidden; }
-
-  /* ── LEFT — TRAINS ── */
-  .col-trains {
-    display: flex; flex-direction: column;
-    background: #ffffff;
-    border-right: 1px solid #e0e4ea;
-    overflow: hidden;
+  .panel-header {
+    height: 72px;
+    padding: 12px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
   }
-  .section-header-train {
-    background: #EB0000;
+  .panel-header.bus { background: linear-gradient(180deg, #FFD92E 0%, var(--post-yellow) 100%); border-bottom: 1px solid rgba(0,0,0,.08); }
+  .panel-header.boat { background: linear-gradient(180deg, #214A91 0%, var(--cgn-blue) 100%); }
+  .panel-header.alerts { height: 44px; background: #FFFFFF; border-bottom: 1px solid var(--line); }
+  .panel-header-left { display: flex; align-items: center; gap: 14px; }
+  .panel-title { font-size: 22px; font-weight: 800; color: white; letter-spacing: -.2px; }
+  .panel-title.dark { color: #111827; }
+  .panel-subtitle { font-size: 13px; color: rgba(255,255,255,.82); margin-top: 2px; font-weight: 600; }
+  .panel-subtitle.dark { color: rgba(17,24,39,.75); }
+  .panel-update { font-size: 14px; color: rgba(255,255,255,.8); font-variant-numeric: tabular-nums; }
+  .panel-update.dark { color: rgba(17,24,39,.72); }
+  .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #16A34A; animation: pulse 2s infinite; display: inline-block; }
+
+  .panel-a .main-header + .col-headers-train::before {
+    content: "🚆  Trains au départ";
+    grid-column: 1 / 3;
+    display: block;
+    font-size: 26px;
+    color: #fff;
+    font-weight: 800;
+    letter-spacing: -.3px;
+    text-transform: none;
+  }
+  .col-headers-train {
+    height: 72px;
+    background: linear-gradient(90deg, var(--sbb-red), var(--sbb-red-dark));
+    color: #fff;
+    display: grid;
+    grid-template-columns: 110px 1fr 115px 90px 120px 74px;
+    align-items: center;
     padding: 0 24px;
-    height: 52px;
-    display: flex; align-items: center; gap: 12px;
+    font-size: 15px;
+    text-transform: none;
+    letter-spacing: 0;
+    border-bottom: none;
     flex-shrink: 0;
   }
-  .section-header-train img { height: 22px; width: auto; filter: brightness(10); }
-  .section-title { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 700; color: white; letter-spacing: 1px; text-transform: uppercase; }
-  .col-sub { font-size: 11px; color: rgba(255,255,255,0.7); margin-left: auto; font-weight: 400; }
+  .col-headers-train span:nth-child(1), .col-headers-train span:nth-child(2) { display: none; }
+  .col-headers-train span { font-weight: 800; opacity: .95; }
 
-  .train-col-headers {
-    display: grid; grid-template-columns: 80px 1fr 90px 80px 90px 56px;
-    padding: 0 24px; height: 32px; align-items: center;
-    background: #f8f9fb; border-bottom: 1px solid #e8eaed;
-    font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: #8a9ab0;
+  .col-headers-bus, .col-headers-boat {
+    background: #F8FAFC;
+    display: grid;
+    align-items: center;
+    padding: 9px 20px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #374151;
+    border-bottom: 1px solid var(--line);
+    text-transform: none;
+    letter-spacing: 0;
     flex-shrink: 0;
   }
+  .col-headers-bus { grid-template-columns: 38px 70px 1fr 82px 66px; }
+  .col-headers-boat { grid-template-columns: 38px 54px 1fr 82px 66px; }
 
-  .trains-scroll { flex: 1; overflow: hidden; }
-  .dep-block { border-bottom: 1px solid #f0f2f5; }
+  .trains-list { flex: 1; overflow: hidden; background: #fff; }
+  .dep-block { border-bottom: 1px solid #EEF2F7; }
   .dep-block:last-child { border-bottom: none; }
   .departure-row {
-    display: grid; grid-template-columns: 80px 1fr 90px 80px 90px 56px;
-    padding: 10px 24px 4px 24px; align-items: center;
-  }
-  .stops-row { padding: 0 24px 8px 112px; display: flex; align-items: center; overflow: hidden; }
-  .stop-chip { white-space: nowrap; }
-  .stop-name { font-size: 12px; color: #9aabb8; }
-  .stop-sep  { color: #d0d8e0; font-size: 11px; margin: 0 5px; }
-
-  .line-icon img { height: 26px; width: auto; display: block; }
-  .line-badge-fallback { display: inline-flex; align-items: center; justify-content: center; padding: 2px 6px; border-radius: 3px; font-weight: 700; font-size: 11px; background: #555; color: white; }
-  .dest { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 600; padding-left: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #0D1B2A; }
-  .dep-time { font-family: 'Barlow Condensed', sans-serif; font-size: 24px; font-weight: 600; color: #0D1B2A; font-variant-numeric: tabular-nums; }
-  .dep-in { font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
-  .dep-in.normal { color: #9aabb8; }
-  .dep-in.soon   { color: #FF9100; font-weight: 700; }
-  .dep-in.now    { color: #FF3D57; font-weight: 700; }
-
-  .status-cell { display: flex; align-items: center; gap: 5px; }
-  .status-dot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .status-dot.on-time  { background: #00C853; }
-  .status-dot.delayed  { background: #FF9100; }
-  .status-dot.cancelled{ background: #FF3D57; }
-  .status-text { font-size: 12px; font-weight: 600; }
-  .status-text.on-time   { color: #00C853; }
-  .status-text.delayed   { color: #FF9100; }
-  .status-text.cancelled { color: #FF3D57; }
-
-  .track-cell { text-align: center; }
-  .track-cell img { height: 22px; width: auto; }
-  .track-num { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 700; color: #1a2b3c; }
-
-  .train-footer {
-    height: 28px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 24px; background: #f8f9fb; border-top: 1px solid #e8eaed;
-    font-size: 10px; color: #b0bec5;
-  }
-  .live-dot { width: 6px; height: 6px; border-radius: 50%; background: #00C853; animation: pulse 2s infinite; display: inline-block; margin-right: 5px; vertical-align: middle; }
-
-  /* ── RIGHT COLUMN ── */
-  .col-right { display: flex; flex-direction: column; overflow: hidden; }
-
-  /* Bus + CGN row */
-  .row-panels {
-    display: grid; grid-template-columns: 1fr 1fr;
-    border-bottom: 1px solid #e0e4ea;
-    flex-shrink: 0;
-    height: 324px;
-  }
-
-  /* Bus panel */
-  .panel-bus { display: flex; flex-direction: column; overflow: hidden; background: #fff; border-right: 1px solid #e0e4ea; }
-  .section-header-bus {
-    background: #ffffff; border-bottom: 1px solid #e0e4ea;
-    height: 52px; padding: 0 20px;
-    display: flex; align-items: center; gap: 12px; flex-shrink: 0;
-  }
-  .bus-logo { height: 30px; width: auto; }
-
-  /* CGN panel */
-  .panel-cgn { display: flex; flex-direction: column; overflow: hidden; background: #fff; }
-  .section-header-cgn {
-    background: #193B79;
-    height: 52px; padding: 0 20px;
-    display: flex; align-items: center; gap: 12px; flex-shrink: 0;
-  }
-  .cgn-logo { height: 26px; width: auto; }
-  .section-header-cgn .section-title { font-size: 18px; }
-  .section-header-cgn .col-sub { color: rgba(255,255,255,0.6); }
-
-  /* Shared sub-headers */
-  .panel-col-headers {
-    display: grid; grid-template-columns: 32px 56px 1fr 72px 64px;
-    padding: 0 20px; height: 28px; align-items: center;
-    background: #f8f9fb; border-bottom: 1px solid #e8eaed;
-    font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: #8a9ab0;
-    flex-shrink: 0;
-  }
-
-  /* Bus rows */
-  .bus-scroll { flex: 1; overflow: hidden; background: #fff; }
-  .bus-row {
-    display: grid; grid-template-columns: 32px 56px 1fr 72px 64px;
-    padding: 8px 20px; border-bottom: 1px solid #f4f6f8; align-items: center;
-  }
-  .bus-row:last-child { border-bottom: none; }
-  .bus-icon-cell img { height: 16px; width: auto; }
-  .bus-badge { display: inline-flex; align-items: center; justify-content: center; font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700; padding: 2px 7px; border-radius: 4px; min-width: 40px; }
-  .bus-badge.carpostal { background: #FFCC00; color: #1a1a1a; }
-  .bus-badge.tug       { background: #E30613; color: white; }
-  .bus-dest { font-size: 15px; font-weight: 500; padding-left: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #1a2b3c; }
-  .bus-time { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 600; color: #1a2b3c; font-variant-numeric: tabular-nums; }
-  .bus-in   { font-size: 12px; font-weight: 500; color: #9aabb8; font-variant-numeric: tabular-nums; }
-  .bus-in.soon { color: #FF9100; font-weight: 700; }
-  .bus-in.now  { color: #FF3D57; font-weight: 700; }
-
-  /* Boat rows */
-  .boats-scroll { flex: 1; overflow: hidden; background: #fff; }
-  .boat-row {
-    display: grid; grid-template-columns: 32px 56px 1fr 72px 64px;
-    padding: 8px 20px; border-bottom: 1px solid #f4f6f8; align-items: center;
-  }
-  .boat-row:last-child { border-bottom: none; }
-  .boat-icon-cell img { height: 16px; width: auto; }
-  .boat-badge { display: inline-flex; align-items: center; justify-content: center; font-family: 'Barlow Condensed', sans-serif; background: #193B79; color: white; font-size: 12px; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
-  .boat-dest { font-size: 15px; font-weight: 500; padding-left: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #1a2b3c; }
-  .boat-time { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 600; color: #1a2b3c; font-variant-numeric: tabular-nums; }
-  .boat-in   { font-size: 12px; font-weight: 500; color: #9aabb8; font-variant-numeric: tabular-nums; }
-  .boat-in.soon { color: #FF9100; font-weight: 700; }
-  .boat-in.now  { color: #FF3D57; font-weight: 700; }
-
-  /* Map */
-  .panel-map { flex: 1; position: relative; overflow: hidden; }
-  .map-label-bar {
-    position: absolute; top: 0; left: 0; right: 0; z-index: 1000;
-    background: rgba(255,255,255,0.92); backdrop-filter: blur(4px);
-    height: 32px; padding: 0 16px;
-    display: flex; align-items: center; gap: 8px;
-    border-bottom: 1px solid #e0e4ea;
-    font-size: 11px; font-weight: 600; color: #4a5568; text-transform: uppercase; letter-spacing: 1px;
-  }
-  .map-label-bar span { font-size: 14px; }
-  #map { width: 100%; height: 100%; }
-
-  /* ── FOOTER — ALERTS ── */
-  .footer-alerts {
-    height: 100px; flex-shrink: 0;
-    background: #1a2b3c;
     display: grid;
-    grid-template-columns: 220px 1fr 1fr 1fr 200px;
-    align-items: stretch;
-    border-top: 1px solid #0d1b2a;
+    grid-template-columns: 110px 1fr 115px 90px 120px 74px;
+    align-items: center;
+    padding: 11px 24px 4px 24px;
+    min-height: 54px;
   }
-  .footer-header {
-    display: flex; flex-direction: column; justify-content: center;
-    padding: 0 24px;
-    border-right: 1px solid rgba(255,255,255,0.08);
-    gap: 6px;
+  .stops-inline { display: flex; align-items: center; overflow: hidden; padding: 0 24px 9px 134px; }
+  .stop-chip { display: flex; align-items: center; gap: 2px; white-space: nowrap; }
+  .stop-name { font-size: 15px; color: #6B7280; }
+  .stop-sep { color: #C6CCD5; font-size: 15px; margin: 0 7px; }
+  .line-icon img { height: 32px; width: auto; display: block; }
+  .line-badge-fallback { display: inline-flex; align-items: center; justify-content: center; padding: 5px 10px; border-radius: 7px; font-weight: 800; font-size: 15px; background: var(--sbb-red); color: white; }
+  .destination { font-size: 24px; font-weight: 800; letter-spacing: -.2px; padding-left: 8px; padding-right: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sched-time { font-size: 23px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .countdown { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .countdown.normal { color: #9CA3AF; }
+  .countdown.soon { color: #F97316; }
+  .countdown.now { color: #EF4444; }
+  .status-cell { display: flex; align-items: center; gap: 7px; }
+  .status-icon { width: 16px; height: 16px; }
+  .status-text { font-size: 14px; font-weight: 800; }
+  .status-text.on-time { color: #16A34A; }
+  .status-text.on-time::before { content: "●"; margin-right: 6px; }
+  .status-text.delayed { color: #F97316; }
+  .status-text.cancelled { color: #EF4444; }
+  .platform { font-size: 18px; font-weight: 800; color: #111827; text-align: center; }
+  .platform img { height: 28px !important; width: auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,.15)); }
+
+  .bus-list, .boats-list { flex: 1; overflow: hidden; background: #fff; }
+  .bus-row, .boat-row {
+    display: grid;
+    align-items: center;
+    padding: 12px 20px;
+    border-bottom: 1px solid #EEF2F7;
+    min-height: 54px;
   }
-  .footer-header-top { display: flex; align-items: center; gap: 8px; }
-  .footer-title { font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 700; color: white; text-transform: uppercase; letter-spacing: 1.5px; }
-  .footer-time  { font-size: 10px; color: rgba(255,255,255,0.4); margin-left: auto; font-variant-numeric: tabular-nums; }
-  .alert-dot { width: 8px; height: 8px; border-radius: 50%; background: #00C853; animation: pulse 2s infinite; }
-
-  .no-alerts-footer { display: flex; align-items: center; padding: 0 20px; font-size: 12px; color: rgba(255,255,255,0.35); font-style: italic; }
-
-  .alert-col {
-    padding: 14px 20px;
-    border-right: 1px solid rgba(255,255,255,0.06);
-    display: flex; flex-direction: column; justify-content: center; gap: 4px;
-    overflow: hidden;
+  .bus-row { grid-template-columns: 38px 70px 1fr 82px 66px; }
+  .boat-row { grid-template-columns: 38px 54px 1fr 82px 66px; }
+  .bus-row:last-child, .boat-row:last-child { border-bottom: none; }
+  .bus-icon-cell, .boat-icon-cell { display: flex; align-items: center; }
+  .bus-icon-cell img, .boat-icon-cell img { height: 22px !important; width: auto; }
+  .bus-line-badge, .boat-line-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 48px;
+    padding: 5px 8px;
+    border-radius: 7px;
+    font-size: 15px;
+    font-weight: 900;
   }
-  .alert-col-header { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
-  .alert-dot-col { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-  .alert-dot-col.warning  { background: #FF9100; }
-  .alert-dot-col.critical { background: #FF3D57; }
-  .alert-dot-col.info     { background: #00A3FF; }
-  .alert-head { font-size: 12px; font-weight: 600; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .alert-desc { font-size: 10px; color: rgba(255,255,255,0.45); line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .bus-line-badge.carpostal { background: var(--post-yellow); color: #111827; }
+  .bus-line-badge.tug { background: #E30613; color: white; }
+  .boat-line-badge { min-width: 38px; background: var(--cgn-blue); color: white; }
+  .bus-dest, .boat-dest { font-size: 17px; font-weight: 800; padding-left: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bus-time, .boat-time { font-size: 18px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .bus-in, .boat-in { font-size: 15px; font-weight: 800; color: #9CA3AF; font-variant-numeric: tabular-nums; }
+  .bus-in.soon, .boat-in.soon { color: #F97316; }
+  .bus-in.now, .boat-in.now { color: #EF4444; }
 
-  /* QR code zone */
-  .footer-qr {
-    display: flex; align-items: center; justify-content: center; gap: 14px;
-    padding: 0 20px;
-    border-left: 1px solid rgba(255,255,255,0.08);
-  }
-  .qr-code { width: 64px; height: 64px; background: white; border-radius: 6px; padding: 4px; }
-  .qr-code img { width: 100%; height: 100%; }
-  .qr-text { font-size: 11px; color: rgba(255,255,255,0.6); line-height: 1.5; }
-  .qr-text strong { color: #EB0000; font-weight: 700; display: block; font-size: 12px; }
+  .alerts-scroll { flex: 1; overflow: hidden; display: grid; grid-template-columns: repeat(3, 1fr); align-items: stretch; gap: 0; background: #fff; }
+  .no-alerts { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; height: 100%; font-size: 16px; color: #9CA3AF; font-style: italic; }
+  .panel-header.alerts .panel-title { color: #111827; font-size: 18px; }
+  .panel-header.alerts .panel-title::before { content: "⚠️"; margin-right: 10px; }
+  .alert-item { display: flex; align-items: flex-start; gap: 12px; padding: 16px 20px; border-right: 1px solid #F0E5D2; border-bottom: none; }
+  .alert-item.alert-warning { background: #FFF8E8; border-left: 5px solid #F97316; }
+  .alert-item.alert-critical { background: #FEF2F2; border-left: 5px solid #EF4444; }
+  .alert-item.alert-info { background: #EFF6FF; border-left: 5px solid #3B82F6; }
+  .alert-icon-c { font-size: 17px; flex-shrink: 0; margin-top: 1px; }
+  .alert-head-c { font-size: 15px; font-weight: 900; color: #111827; line-height: 1.25; }
+  .alert-desc-c { font-size: 13px; color: #4B5563; margin-top: 5px; line-height: 1.35; }
 
-  .loading-msg { padding: 16px; text-align: center; color: #b0bec5; font-size: 12px; }
-  .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid #ddd; border-top-color: #EB0000; border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 6px; }
-  @keyframes spin  { to { transform: rotate(360deg); } }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .footer { height: 31px; padding: 7px 24px; display: flex; justify-content: space-between; font-size: 12px; color: #9CA3AF; border-top: 1px solid #EEF2F7; flex-shrink: 0; background: white; }
+
+  .loading-msg { padding: 18px; text-align: center; color: #9CA3AF; font-size: 14px; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #D1D5DB; border-top-color: var(--sbb-red); border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -2px; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+  .map-label { background: white; border: 2px solid #333; border-radius: 8px; padding: 4px 8px; font-size: 12px; font-weight: 800; white-space: nowrap; box-shadow: 0 4px 14px rgba(0,0,0,.18); }
+  .map-label.train { border-color: var(--sbb-red); color: var(--sbb-red); }
+  .map-label.bus { border-color: var(--post-yellow); background: var(--post-yellow); color: #111827; }
+  .map-label.boat { border-color: var(--cgn-blue); color: var(--cgn-blue); }
+  .map-label.office { border-color: #111827; color: #111827; }
 </style>
 </head>
 <body>
-<div class="page">
+<div class="layout">
 
-  <!-- ══════════ HEADER ══════════ -->
-  <div class="header">
-    <div class="header-left">
-      <img class="sbb-logo" src="sbb_logo.jpeg" alt="SBB CFF FFS">
-      <div class="header-divider"></div>
-      <div class="station-block">
-        <div class="station-name">Gland</div>
-        <div class="station-date" id="dateStr">--</div>
+  <!-- ═══════════ LEFT COLUMN ═══════════ -->
+  <div class="col-left">
+
+    <!-- PANEL A — TRAINS -->
+    <div class="panel-a">
+      <div class="main-header">
+        <div class="header-left">
+          <img class="sbb-logo-img" src="sbb_logo.jpeg" alt="SBB CFF FFS">
+        </div>
+        <div class="header-center"><div class="station-name">Gland</div></div>
+        <div>
+          <div class="clock" id="clock">--:--:--</div>
+          <div class="date-str" id="dateStr">--</div>
+        </div>
+      </div>
+      <div class="col-headers-train">
+        <span>Line</span><span>Destination</span><span>Departure</span><span>In</span><span>Status</span><span style="text-align:center">Track</span>
+      </div>
+      <div class="trains-list" id="trainsList">
+        <div class="loading-msg"><span class="spinner"></span>Loading departures…</div>
+      </div>
+      <div class="footer">
+        <span><span class="live-dot"></span> <span id="lastUpdateTrain">Updating…</span></span>
+        <span>transport.opendata.ch</span>
       </div>
     </div>
-    <div class="header-clock">
-      <span class="clock-icon">🕐</span>
-      <span class="clock-hhmm" id="clockHHMM">--:--</span>
-      <span class="clock-ss" id="clockSS">:--</span>
+
+    <!-- PANEL E — ALERTS -->
+    <div class="panel-e">
+      <div class="panel-header alerts">
+        <div class="panel-header-left">
+          <div class="live-dot" id="alertDot"></div>
+          <div class="panel-title">Traffic Information</div>
+        </div>
+        <div class="panel-update" id="alertUpdate">--</div>
+      </div>
+      <div class="alerts-scroll" id="alertsContent">
+        <div class="no-alerts">No disruptions on the network</div>
+      </div>
     </div>
+
   </div>
 
-  <!-- ══════════ BODY ══════════ -->
-  <div class="body">
+  <!-- ═══════════ RIGHT COLUMN ═══════════ -->
+  <div class="col-right">
 
-    <!-- LEFT — TRAINS -->
-    <div class="col-trains">
-      <div class="section-header-train">
-        <img src="https://icons.app.sbb.ch/icons/train.svg" alt="train">
-        <span class="section-title">Trains au départ</span>
-        <span class="col-sub">Départ &nbsp;&nbsp; Dans &nbsp;&nbsp; Statut &nbsp;&nbsp; Voie</span>
-      </div>
-      <div class="train-col-headers">
-        <span>Ligne</span>
-        <span>Destination</span>
-        <span>Départ</span>
-        <span>Dans</span>
-        <span>Statut</span>
-        <span style="text-align:center">Voie</span>
-      </div>
-      <div class="trains-scroll" id="trainsList">
-        <div class="loading-msg"><span class="spinner"></span>Chargement…</div>
-      </div>
-      <div class="train-footer">
-        <span><span class="live-dot"></span><span id="lastUpdateTrain">Mise à jour en cours…</span></span>
-        <span>Données : transport.opendata.ch</span>
-      </div>
-    </div>
+    <!-- BUS + BOATS side by side -->
+    <div class="row-top-right">
 
-    <!-- RIGHT -->
-    <div class="col-right">
-
-      <!-- BUS + CGN -->
-      <div class="row-panels">
-
-        <!-- BUS -->
-        <div class="panel-bus">
-          <div class="section-header-bus">
-            <img class="bus-logo" src="carpostal_logo.jpg" alt="CarPostal">
+      <!-- PANEL B — BUS -->
+      <div class="panel-b">
+        <div class="panel-header bus">
+          <div class="panel-header-left">
+            <img src="carpostal_logo.jpg" style="height:32px;width:auto;" alt="CarPostal">
             <div>
-              <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:#1a2b3c;letter-spacing:0.5px;">Bus — Gland Gare</div>
-              <div style="font-size:10px;color:#8a9ab0;margin-top:1px;">811 · 830 · 831 · 835 · 836</div>
+              <div class="panel-title dark">Bus — Gland Gare</div>
+              <div class="panel-subtitle dark">811 · 830 · 831 · 835 · 836</div>
             </div>
-            <div style="margin-left:auto;font-size:10px;color:#b0bec5;" id="busUpdate">--</div>
           </div>
-          <div class="panel-col-headers">
-            <span></span><span>Ligne</span><span>Destination</span><span>Départ</span><span>Dans</span>
-          </div>
-          <div class="bus-scroll" id="busList">
-            <div class="loading-msg"><span class="spinner"></span>Chargement…</div>
-          </div>
+          <div class="panel-update dark" id="busUpdate">--</div>
         </div>
+        <div class="col-headers-bus">
+          <span></span><span>Line</span><span>Destination</span><span>Dep.</span><span>In</span>
+        </div>
+        <div class="bus-list" id="busList">
+          <div class="loading-msg"><span class="spinner"></span>Loading…</div>
+        </div>
+      </div>
 
-        <!-- CGN -->
-        <div class="panel-cgn">
-          <div class="section-header-cgn">
-            <img class="cgn-logo" src="cgn_logo.png" alt="CGN">
+      <!-- PANEL C — BOATS CGN -->
+      <div class="panel-c">
+        <div class="panel-header boat">
+          <div class="panel-header-left">
+            <img src="cgn_logo.png" style="height:26px;width:auto;" alt="CGN">
             <div>
-              <div class="section-title">Nyon Port</div>
-              <div style="font-size:10px;color:rgba(255,255,255,0.6);margin-top:1px;">Lac Léman départs</div>
+              <div class="panel-title">Nyon Port</div>
+              <div class="panel-subtitle">Lac Léman departures</div>
             </div>
-            <div style="margin-left:auto;font-size:10px;color:rgba(255,255,255,0.5);" id="boatUpdate">--</div>
           </div>
-          <div class="panel-col-headers">
-            <span></span><span>Ligne</span><span>Destination</span><span>Départ</span><span>Dans</span>
-          </div>
-          <div class="boats-scroll" id="boatsList">
-            <div class="loading-msg"><span class="spinner"></span>Chargement…</div>
-          </div>
+          <div class="panel-update" id="boatUpdate">--</div>
         </div>
-
-      </div>
-
-      <!-- MAP -->
-      <div class="panel-map">
-        <div class="map-label-bar">
-          <span>📍</span> Carte en temps réel
+        <div class="col-headers-boat">
+          <span></span><span>Line</span><span>Destination</span><span>Dep.</span><span>In</span>
         </div>
-        <div id="map"></div>
+        <div class="boats-list" id="boatsList">
+          <div class="loading-msg"><span class="spinner"></span>Loading…</div>
+        </div>
       </div>
 
     </div>
+
+    <!-- PANEL D — MAP -->
+    <div class="panel-d">
+      <div style="position:absolute;z-index:800;top:16px;left:18px;background:white;border:1px solid rgba(17,24,39,.08);border-radius:10px;padding:9px 14px;font-size:14px;font-weight:800;box-shadow:0 6px 18px rgba(15,23,42,.12);">📍 Carte en temps réel</div>
+      <div id="map"></div>
+    </div>
+
   </div>
-
-  <!-- ══════════ FOOTER — ALERTS ══════════ -->
-  <div class="footer-alerts">
-    <div class="footer-header">
-      <div class="footer-header-top">
-        <div class="alert-dot" id="alertDot"></div>
-        <div class="footer-title">Traffic Information</div>
-      </div>
-      <div style="font-size:10px;color:rgba(255,255,255,0.35);" id="alertUpdate">--</div>
-    </div>
-    <div id="alertCol1" class="alert-col"><div class="no-alerts-footer">Aucune perturbation</div></div>
-    <div id="alertCol2" class="alert-col"></div>
-    <div id="alertCol3" class="alert-col"></div>
-    <div class="footer-qr">
-      <div class="qr-code">
-        <!-- QR code pointing to sbb.ch -->
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=64x64&data=https://www.sbb.ch&format=svg" alt="QR sbb.ch">
-      </div>
-      <div class="qr-text">
-        <strong>Plus d'informations</strong>
-        sur sbb.ch
-      </div>
-    </div>
-  </div>
-
 </div>
 
 <script>
@@ -397,10 +360,9 @@
   // ── Clock ──
   function updateClock() {
     const n=new Date(), pad=v=>String(v).padStart(2,'0');
-    document.getElementById('clockHHMM').textContent=pad(n.getHours())+':'+pad(n.getMinutes());
-    document.getElementById('clockSS').textContent=':'+pad(n.getSeconds());
-    const days=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
-    const months=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+    document.getElementById('clock').textContent=pad(n.getHours())+':'+pad(n.getMinutes())+':'+pad(n.getSeconds());
+    const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     document.getElementById('dateStr').textContent=days[n.getDay()]+' '+n.getDate()+' '+months[n.getMonth()]+' '+n.getFullYear();
   }
   setInterval(updateClock,1000); updateClock();
@@ -419,13 +381,12 @@
   function countdown(depDate){
     if(!depDate)return{text:'—',cls:'normal'};
     const diff=Math.round((depDate-Date.now())/60000);
-    if(diff<0)return{text:'Parti',cls:'now'};
-    if(diff===0)return{text:'Maintenant',cls:'now'};
+    if(diff<0)return{text:'Left',cls:'now'};
+    if(diff===0)return{text:'Now',cls:'now'};
     if(diff<=5)return{text:diff+' min',cls:'soon'};
     return{text:diff+' min',cls:'normal'};
   }
   function delayMin(stop){ if(!stop||stop.departureDelay==null)return 0; return Math.round(stop.departureDelay/60); }
-
   function lineIconHtml(cat,num){
     const c=(cat||'').toLowerCase(),n=(num||'').trim();
     const primary=ICON_BASE+(n?c+'-'+n:c)+'.svg';
@@ -433,11 +394,10 @@
     const label=(cat+' '+(num||'')).trim();
     return '<div class="line-icon"><img src="'+primary+'" onerror="if(this.src!==\''+fallback+'\'){this.src=\''+fallback+'\';}else{this.style.display=\'none\';this.nextElementSibling.style.display=\'inline-flex\';}" alt="'+label+'"><span class="line-badge-fallback" style="display:none">'+label+'</span></div>';
   }
-
-  function statusHtml(delay, cancelled) {
-    if(cancelled) return '<div class="status-cell"><div class="status-dot cancelled"></div><span class="status-text cancelled">Supprimé</span></div>';
-    if(delay>0)   return '<div class="status-cell"><div class="status-dot delayed"></div><span class="status-text delayed">+'+delay+' min</span></div>';
-    return '<div class="status-cell"><div class="status-dot on-time"></div><span class="status-text on-time">On time</span></div>';
+  function statusHtml(delay,cancelled){
+    if(cancelled)return'<div class="status-cell"><img class="status-icon" src="'+ICON_BASE+'cancellation.svg"><span class="status-text cancelled">Cancelled</span></div>';
+    if(delay>0)return'<div class="status-cell"><img class="status-icon" src="'+ICON_BASE+'delay.svg"><span class="status-text delayed">+'+delay+'m</span></div>';
+    return'<div class="status-cell"><span class="status-text on-time">On time</span></div>';
   }
 
   // ── Stops cache ──
@@ -474,12 +434,12 @@
     }).join('');
   }
 
-  // ═══════════ TRAINS ═══════════
+  // ═══════════ PANEL A — TRAINS ═══════════
   let trainsData=[];
   function refreshTrainCountdowns(){
     trainsData.forEach((dep,i)=>{
       const el=document.getElementById('tcd-'+i); if(!el)return;
-      const cd=countdown(getSchedDate(dep)); el.textContent=cd.text; el.className='dep-in '+cd.cls;
+      const cd=countdown(getSchedDate(dep)); el.textContent=cd.text; el.className='countdown '+cd.cls;
     });
   }
   setInterval(refreshTrainCountdowns,10000);
@@ -492,7 +452,7 @@
       const data=await r.json();
       trainsData=data.stationboard||[];
       const list=document.getElementById('trainsList');
-      if(!trainsData.length){list.innerHTML='<div class="loading-msg">Aucun départ disponible.</div>';return;}
+      if(!trainsData.length){list.innerHTML='<div class="loading-msg">No departures available.</div>';return;}
       list.innerHTML=trainsData.map((dep,i)=>{
         const cat=dep.category||'?',num=dep.number||'';
         const dest=dep.to||'—';
@@ -503,19 +463,16 @@
         const cd=countdown(schedDate);
         const key=(dep.category||'')+(dep.number||'')+(dep.departure||'');
         const stopsHtml=stopsCache[key]?nextStopsHtml(stopsCache[key]):'';
-        const trackHtml=plat&&plat!=='—'
-          ?'<img src="'+PICTO_BASE+'tracks-'+plat+'-fr-small.svg" style="height:22px;width:auto;" alt="'+plat+'">'
-          :'<span class="track-num">'+plat+'</span>';
         return'<div class="dep-block" id="tblock-'+i+'">'
           +'<div class="departure-row">'
           +'<div>'+lineIconHtml(cat,num)+'</div>'
-          +'<div class="dest">'+dest+'</div>'
-          +'<div class="dep-time">'+fmtHHMM(schedDate)+'</div>'
-          +'<div class="dep-in '+cd.cls+'" id="tcd-'+i+'">'+cd.text+'</div>'
+          +'<div class="destination">'+dest+'</div>'
+          +'<div class="sched-time">'+fmtHHMM(schedDate)+'</div>'
+          +'<div><span class="countdown '+cd.cls+'" id="tcd-'+i+'">'+cd.text+'</span></div>'
           +'<div>'+statusHtml(delay,cancelled)+'</div>'
-          +'<div class="track-cell">'+trackHtml+'</div>'
+          +'<div class="platform">'+(plat&&plat!=='—'?'<img src="'+PICTO_BASE+'tracks-'+plat+'-fr-small.svg" style="height:22px;width:auto;" alt="'+plat+'">':plat)+'</div>'
           +'</div>'
-          +'<div class="stops-row" id="tstops-'+i+'">'+stopsHtml+'</div>'
+          +'<div class="stops-inline" id="tstops-'+i+'">'+stopsHtml+'</div>'
           +'</div>';
       }).join('');
       trainsData.forEach(async(dep,i)=>{
@@ -525,13 +482,13 @@
         if(el)el.innerHTML=nextStopsHtml(stopsCache[key]);
       });
       const n=new Date(),pad=v=>String(v).padStart(2,'0');
-      document.getElementById('lastUpdateTrain').textContent='Mis à jour à '+pad(n.getHours())+':'+pad(n.getMinutes())+':'+pad(n.getSeconds());
+      document.getElementById('lastUpdateTrain').textContent='Updated '+pad(n.getHours())+':'+pad(n.getMinutes())+':'+pad(n.getSeconds());
     }catch(e){
-      document.getElementById('trainsList').innerHTML='<div class="loading-msg">Impossible de contacter l\'API SBB.</div>';
+      document.getElementById('trainsList').innerHTML='<div class="loading-msg">Cannot reach SBB API.</div>';
     }
   }
 
-  // ═══════════ BUS ═══════════
+  // ═══════════ PANEL B — BUS ═══════════
   const BUS_LINES=['811','830','831','835','836'];
   const BUS_STATIONS=['Gland, gare nord','Gland, gare sud','Gland, gare'];
 
@@ -553,8 +510,8 @@
       const soon=unique.filter(dep=>{
         const d=getSchedDate(dep);if(!d)return false;
         const diff=Math.round((d-now)/60000);return diff>=-1&&diff<=180;
-      }).slice(0,7);
-      if(!soon.length){list.innerHTML='<div class="loading-msg" style="color:#b0bec5;">Aucun départ trouvé.</div>';return;}
+      }).slice(0,8);
+      if(!soon.length){list.innerHTML='<div class="loading-msg" style="color:#aaa;">No buses found.</div>';return;}
       const busIcon='<img src="'+PICTO_BASE+'bus-right.svg" style="height:16px;width:auto;" alt="bus">';
       list.innerHTML=soon.map(dep=>{
         const num=String(dep.number||dep.name||'').replace(/\D/g,'');
@@ -563,7 +520,7 @@
         const badgeCls=num==='831'?'tug':'carpostal';
         return'<div class="bus-row">'
           +'<div class="bus-icon-cell">'+busIcon+'</div>'
-          +'<div><span class="bus-badge '+badgeCls+'">'+num+'</span></div>'
+          +'<div><span class="bus-line-badge '+badgeCls+'">'+num+'</span></div>'
           +'<div class="bus-dest">'+dest+'</div>'
           +'<div class="bus-time">'+fmtHHMM(getSchedDate(dep))+'</div>'
           +'<div class="bus-in '+cd.cls+'">'+cd.text+'</div>'
@@ -571,17 +528,17 @@
       }).join('');
       const n=new Date(),pad=v=>String(v).padStart(2,'0');
       document.getElementById('busUpdate').textContent=pad(n.getHours())+':'+pad(n.getMinutes());
-    }catch(e){list.innerHTML='<div class="loading-msg">Erreur API bus.</div>';}
+    }catch(e){list.innerHTML='<div class="loading-msg">Cannot reach bus API.</div>';}
   }
 
-  // ═══════════ BATEAUX CGN ═══════════
-  const CGN_STATIONS=['Nyon (Lac)','Nyon, Lac','Nyon lac','Nyon, débarcadère','Nyon, CGN'];
+  // ═══════════ PANEL C — BATEAUX CGN ═══════════
+  const CGN_STATION_NAMES=['Nyon (Lac)','Nyon, Lac','Nyon lac','Nyon, débarcadère','Nyon, CGN'];
 
   async function refreshBoats(){
     const list=document.getElementById('boatsList');
     try{
       let boats=[];
-      for(const name of CGN_STATIONS){
+      for(const name of CGN_STATION_NAMES){
         try{
           const r=await fetch('https://transport.opendata.ch/v1/stationboard?station='+encodeURIComponent(name)+'&limit=6&type=departure');
           if(!r.ok)continue;
@@ -589,19 +546,19 @@
           if((data.stationboard||[]).length>0){boats=data.stationboard.slice(0,6);break;}
         }catch(e){continue;}
       }
-      if(!boats.length){list.innerHTML='<div class="loading-msg" style="color:#b0bec5;">Aucun départ CGN.</div>';return;}
+      if(!boats.length){list.innerHTML='<div class="loading-msg" style="color:#aaa;">No CGN departures.</div>';return;}
       const now=Date.now();
       const filtered=boats.filter(dep=>{
         const d=getSchedDate(dep);if(!d)return false;
         const diff=Math.round((d-now)/60000);return diff>=-2&&diff<=240;
       });
-      if(!filtered.length){list.innerHTML='<div class="loading-msg" style="color:#b0bec5;">Pas de départ aujourd\'hui.</div>';return;}
-      const boatIcon='<img src="'+PICTO_BASE+'jetty-right.svg" style="height:16px;width:auto;" alt="bateau">';
+      if(!filtered.length){list.innerHTML='<div class="loading-msg" style="color:#aaa;">No more today.</div>';return;}
+      const boatIcon='<img src="'+PICTO_BASE+'jetty-right.svg" style="height:16px;width:auto;" alt="boat">';
       list.innerHTML=filtered.map(dep=>{
         const dest=dep.to||'—';
         const cd=countdown(getSchedDate(dep));
         const lineNum=(dep.number||dep.name||dep.category||'').replace(/^0+/,'');
-        const lineBadge=lineNum?'<span class="boat-badge">'+lineNum+'</span>':'';
+        const lineBadge=lineNum?'<span class="boat-line-badge">'+lineNum+'</span>':'';
         return'<div class="boat-row">'
           +'<div class="boat-icon-cell">'+boatIcon+'</div>'
           +'<div>'+lineBadge+'</div>'
@@ -612,76 +569,106 @@
       }).join('');
       const n=new Date(),pad=v=>String(v).padStart(2,'0');
       document.getElementById('boatUpdate').textContent=pad(n.getHours())+':'+pad(n.getMinutes());
-    }catch(e){list.innerHTML='<div class="loading-msg">Erreur API CGN.</div>';}
+    }catch(e){list.innerHTML='<div class="loading-msg">Cannot reach CGN API.</div>';}
   }
 
-  // ═══════════ ALERTES ═══════════
+  // ═══════════ PANEL E — ALERTS ═══════════
   async function refreshAlerts(){
     try{
       const r=await fetch(WORKER_URL,{cache:'no-store'});if(!r.ok)return;
       const data=await r.json();
       const alerts=(data.alerts||[]).filter(a=>a.header&&a.header.trim()!=='');
+      const content=document.getElementById('alertsContent');
       const dot=document.getElementById('alertDot');
+      const upd=document.getElementById('alertUpdate');
       const n=new Date(),pad=v=>String(v).padStart(2,'0');
-      document.getElementById('alertUpdate').textContent='Mis à jour à '+pad(n.getHours())+':'+pad(n.getMinutes());
-
+      upd.textContent=pad(n.getHours())+':'+pad(n.getMinutes());
       if(!alerts.length){
-        dot.style.background='#00C853';
-        document.getElementById('alertCol1').innerHTML='<div class="no-alerts-footer">Aucune perturbation sur le réseau</div>';
-        document.getElementById('alertCol2').innerHTML='';
-        document.getElementById('alertCol3').innerHTML='';
+        dot.style.background='#4CAF50';
+        content.innerHTML='<div class="no-alerts">No disruptions on the network</div>';
         return;
       }
-      dot.style.background='#FF9100';
-      const cols=['alertCol1','alertCol2','alertCol3'];
-      alerts.slice(0,3).forEach((a,i)=>{
+      dot.style.background='#FF5722';
+      content.innerHTML=alerts.slice(0,3).map(a=>{
         const cause=a.cause||'';
         const isCritical=['TECHNICAL_PROBLEM','ACCIDENT'].includes(cause);
         const isInfo=['CONSTRUCTION','MAINTENANCE'].includes(cause);
-        const dotCls=isCritical?'critical':isInfo?'info':'warning';
+        const cls=isCritical?'alert-critical':isInfo?'alert-info':'alert-warning';
+        const icon=isCritical?'🔴':isInfo?'🔧':'⚠️';
         const desc=(a.description||'').replace(/<[^>]+>/g,'');
         const shortDesc=desc.length>120?desc.substring(0,120)+'…':desc;
-        document.getElementById(cols[i]).innerHTML=
-          '<div class="alert-col-header">'
-          +'<div class="alert-dot-col '+dotCls+'"></div>'
-          +'<div class="alert-head">'+a.header+'</div>'
-          +'</div>'
-          +(shortDesc?'<div class="alert-desc">'+shortDesc+'</div>':'');
-      });
-      // Clear unused columns
-      for(let i=alerts.length;i<3;i++) document.getElementById(cols[i]).innerHTML='';
+        return'<div class="alert-item '+cls+'"><div class="alert-icon-c">'+icon+'</div>'
+          +'<div><div class="alert-head-c">'+a.header+'</div>'
+          +(shortDesc?'<div class="alert-desc-c">'+shortDesc+'</div>':'')
+          +'</div></div>';
+      }).join('');
     }catch(e){}
   }
 
-  // ═══════════ MAP ═══════════
+  // ═══════════ PANEL D — MAP (Leaflet + OpenStreetMap) ═══════════
   function initMap(){
-    const map=L.map('map',{
-      center:[46.4190,6.2695],
-      zoom:17,
-      zoomControl:false,
-      attributionControl:true,
-      dragging:false,
-      scrollWheelZoom:false,
-      doubleClickZoom:false,
-      touchZoom:false,
+    // Use CartoDB Positron — cleaner, less cluttered than OSM default
+    const map = L.map('map', {
+      center: [46.4190, 6.2695],
+      zoom: 17,
+      zoomControl: false,
+      attributionControl: true,
+      dragging: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      touchZoom: false,
     });
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
-      attribution:'© OpenStreetMap · © CartoDB',
-      subdomains:'abcd', maxZoom:19,
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap · © CartoDB',
+      subdomains: 'abcd',
+      maxZoom: 19,
     }).addTo(map);
 
-    function makeMarker(bg,textColor,label,sublabel){
+    // ── Icon factory ──
+    function makeMarker(color, textColor, label, sublabel) {
+      const html =
+        '<div style="'
+        +'background:'+color+';'
+        +'color:'+textColor+';'
+        +'border-radius:8px;'
+        +'padding:5px 10px;'
+        +'font-size:12px;'
+        +'font-weight:700;'
+        +'white-space:nowrap;'
+        +'box-shadow:0 2px 8px rgba(0,0,0,0.25);'
+        +'border:2px solid rgba(255,255,255,0.8);'
+        +'line-height:1.3;'
+        +'text-align:center;'
+        +'">'
+        +label
+        +(sublabel?'<br><span style="font-size:10px;font-weight:400;opacity:0.85;">'+sublabel+'</span>':'')
+        +'</div>';
       return L.divIcon({
-        className:'',
-        html:'<div style="background:'+bg+';color:'+textColor+';border-radius:8px;padding:5px 10px;font-family:Barlow Condensed,sans-serif;font-size:13px;font-weight:700;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.2);border:2px solid rgba(255,255,255,0.9);line-height:1.3;text-align:center;">'+label+(sublabel?'<br><span style="font-size:10px;font-weight:400;opacity:0.8;">'+sublabel+'</span>':'')+'</div>',
-        iconAnchor:[0,0],popupAnchor:[0,-10],
+        className: '',
+        html: html,
+        iconAnchor: [0, 0],
+        popupAnchor: [0, -10],
       });
     }
 
-    L.marker([46.42001665516712,6.269129424896002],{icon:makeMarker('#EB0000','white','🚂 Gland Gare','RE33 · IR57')}).addTo(map);
-    L.marker([46.42003624492582,6.2689101346166005],{icon:makeMarker('#FFCC00','#1a1a1a','🚌 Gare Nord','811 · 830 · 831')}).addTo(map);
-    L.marker([46.420166178377784,6.271215490043696],{icon:makeMarker('#E30613','white','🚌 Gare Sud','835 · 836')}).addTo(map);
-    L.marker([46.417776429346056,6.268021915171526],{icon:makeMarker('#1a2b3c','white','🏢 Swissquote','Chemin de la Crétaux')}).addTo(map);
+    // ── MARKERS — coordonnées GPS exactes ──
+
+    // 🚂 Gland Gare CFF (train)
+    L.marker([46.42001665516712, 6.269129424896002], {icon: makeMarker('#EB0000','white','🚂 Gland Gare','RE33 · IR57')})
+      .addTo(map);
+
+    // 🚌 Gland Gare Nord (bus 811, 830, 831)
+    L.marker([46.42003624492582, 6.2689101346166005], {icon: makeMarker('#FFCC00','#1a1a1a','🚌 Gare Nord','811 · 830 · 831')})
+      .addTo(map);
+
+    // 🚌 Gland Gare Sud (bus 835, 836)
+    L.marker([46.420166178377784, 6.271215490043696], {icon: makeMarker('#E30613','white','🚌 Gare Sud','835 · 836')})
+      .addTo(map);
+
+    // 🏢 Swissquote
+    L.marker([46.417776429346056, 6.268021915171526], {icon: makeMarker('#1a1a1a','white','🏢 Swissquote','Chemin de la Crétaux')})
+      .addTo(map);
   }
 
   // ═══════════ Init ═══════════
