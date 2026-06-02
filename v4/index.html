@@ -1,1 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<title>Gland — Transport & Weather Display</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 1920px; height: 1080px;
+    overflow: hidden;
+    background: #ffffff;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    color: #1a1a1a;
+  }
+  .layout { width: 1920px; height: 1080px; display: grid; grid-template-columns: 60% 40%; }
 
+  .panel-a { display: flex; flex-direction: column; border-right: 3px solid #e0e0e0; height: 1080px; overflow: hidden; }
+  .panel-right { display: flex; flex-direction: column; height: 1080px; }
+  .panel-b { height: 40%; display: flex; flex-direction: column; border-bottom: 2px solid #e0e0e0; overflow: hidden; }
+  .panel-c { height: 30%; display: flex; flex-direction: column; border-bottom: 2px solid #e0e0e0; overflow: hidden; }
+  .panel-d { height: 30%; display: flex; flex-direction: column; overflow: hidden; }
+
+  .main-header { background: #fff; padding: 10px 24px; display: flex; align-items: center; justify-content: space-between; position: relative; border-bottom: 3px solid #e0e0e0; flex-shrink: 0; }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .sbb-logo-img { height: 28px; width: auto; }
+  .header-center { position: absolute; left: 50%; transform: translateX(-50%); }
+  .station-name { font-size: 34px; font-weight: 700; color: #1a1a1a; }
+  .clock { font-size: 24px; font-weight: 300; font-variant-numeric: tabular-nums; letter-spacing: 2px; text-align: right; }
+  .date-str { font-size: 10px; color: #888; margin-top: 2px; text-align: right; }
+
+  .panel-header { padding: 7px 20px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .panel-header.bus    { background: #2E7D32; }
+  .panel-header.boat   { background: #193B79; }
+  .panel-header.alerts { background: #1a1a1a; }
+  .panel-header-left { display: flex; align-items: center; gap: 10px; }
+  .panel-title    { font-size: 15px; font-weight: 700; color: white; letter-spacing: 0.5px; }
+  .panel-subtitle { font-size: 10px; color: rgba(255,255,255,0.7); margin-top: 1px; }
+  .panel-update   { font-size: 10px; color: rgba(255,255,255,0.6); }
+  .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #4CAF50; animation: pulse 2s infinite; display: inline-block; }
+
+  .col-headers-train { background: #e8e8e8; display: grid; grid-template-columns: 95px 1fr 110px 85px 105px 65px; padding: 6px 24px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #666; border-bottom: 1px solid #ccc; flex-shrink: 0; }
+  .col-headers-bus   { background: #E8F5E9; display: grid; grid-template-columns: 60px 1fr 80px 70px; padding: 5px 20px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #2E7D32; border-bottom: 1px solid #C8E6C9; flex-shrink: 0; }
+  .col-headers-boat  { background: #eef0f5; display: grid; grid-template-columns: 40px 50px 1fr 80px 70px; padding: 5px 20px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #193B79; border-bottom: 1px solid #c5cde0; flex-shrink: 0; }
+
+  .trains-list { flex: 1; overflow: hidden; background: #fff; }
+  .dep-block { border-bottom: 1px solid #ddd; }
+  .dep-block:last-child { border-bottom: none; }
+  .departure-row { display: grid; grid-template-columns: 95px 1fr 110px 85px 105px 65px; padding: 9px 24px 3px 24px; align-items: center; }
+  .stops-inline { display: flex; align-items: center; overflow: hidden; padding: 0 24px 7px 122px; }
+  .stop-chip { display: flex; align-items: center; gap: 2px; white-space: nowrap; }
+  .stop-name { font-size: 14px; color: #777; }
+  .stop-sep  { color: #ccc; font-size: 14px; margin: 0 5px; }
+  .line-icon img { height: 28px; width: auto; display: block; }
+  .line-badge-fallback { display: inline-flex; align-items: center; justify-content: center; padding: 2px 6px; border-radius: 3px; font-weight: 700; font-size: 11px; background: #555; color: white; }
+  .destination { font-size: 20px; font-weight: 600; padding-left: 8px; padding-right: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sched-time  { font-size: 22px; font-weight: 300; font-variant-numeric: tabular-nums; }
+  .countdown   { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .countdown.normal { color: #aaa; } .countdown.soon { color: #FF9800; } .countdown.now { color: #FF3D00; }
+  .status-cell { display: flex; align-items: center; gap: 4px; }
+  .status-icon { width: 14px; height: 14px; }
+  .status-text { font-size: 12px; font-weight: 600; }
+  .status-text.on-time { color: #4CAF50; } .status-text.delayed { color: #FF5722; } .status-text.cancelled { color: #FF1744; }
+  .platform { font-size: 16px; font-weight: 700; color: #333; text-align: center; }
+
+  .bus-list { flex: 1; overflow: hidden; background: #fff; }
+  .bus-row { display: grid; grid-template-columns: 60px 1fr 80px 70px; padding: 7px 20px; border-bottom: 1px solid #E8F5E9; align-items: center; }
+  .bus-row:last-child { border-bottom: none; }
+  .bus-line-badge { display: inline-flex; align-items: center; justify-content: center; background: #2E7D32; color: white; font-size: 12px; font-weight: 700; padding: 3px 6px; border-radius: 3px; min-width: 36px; }
+  .bus-dest { font-size: 16px; font-weight: 600; padding-left: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bus-time { font-size: 18px; font-weight: 300; font-variant-numeric: tabular-nums; }
+  .bus-in   { font-size: 12px; font-weight: 600; color: #aaa; font-variant-numeric: tabular-nums; }
+  .bus-in.soon { color: #FF9800; } .bus-in.now { color: #FF3D00; }
+
+  .boats-list { flex: 1; overflow: hidden; background: #fff; }
+  .boat-row { display: grid; grid-template-columns: 40px 50px 1fr 80px 70px; padding: 7px 20px; border-bottom: 1px solid #eef0f5; align-items: center; }
+  .boat-row:last-child { border-bottom: none; }
+  .boat-icon-cell { display: flex; align-items: center; }
+  .boat-line-badge { display: inline-flex; align-items: center; justify-content: center; background: #193B79; color: white; font-size: 11px; font-weight: 700; padding: 2px 5px; border-radius: 3px; }
+  .boat-dest { font-size: 16px; font-weight: 600; padding-left: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .boat-time { font-size: 18px; font-weight: 300; font-variant-numeric: tabular-nums; }
+  .boat-in   { font-size: 12px; font-weight: 600; color: #aaa; font-variant-numeric: tabular-nums; }
+  .boat-in.soon { color: #FF9800; } .boat-in.now { color: #FF3D00; }
+
+  .panel-d-content { display: grid; grid-template-columns: 1fr 1fr; flex: 1; overflow: hidden; }
+  .alerts-zone { border-right: 1px solid #e0e0e0; overflow: hidden; display: flex; flex-direction: column; }
+  .alerts-scroll { flex: 1; overflow: hidden; }
+  .no-alerts { display: flex; align-items: center; justify-content: center; height: 100%; font-size: 12px; color: #bbb; font-style: italic; }
+  .alert-item { display: flex; align-items: flex-start; gap: 8px; padding: 8px 14px; border-bottom: 1px solid rgba(0,0,0,0.05); }
+  .alert-item.alert-warning  { background: #FFF8E1; border-left: 4px solid #FF9800; }
+  .alert-item.alert-critical { background: #FFEBEE; border-left: 4px solid #F44336; }
+  .alert-item.alert-info     { background: #E3F2FD; border-left: 4px solid #2196F3; }
+  .alert-icon-c { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .alert-head-c { font-size: 11px; font-weight: 700; color: #1a1a1a; line-height: 1.3; }
+  .alert-desc-c { font-size: 10px; color: #555; margin-top: 2px; line-height: 1.3; }
+
+  .weather-zone { overflow: hidden; display: flex; flex-direction: column; background: #f8f9ff; }
+  .weather-header { padding: 7px 14px 4px; border-bottom: 1px solid #e8eaf0; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; }
+  .weather-title { font-size: 11px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 1px; }
+  .weather-loc   { font-size: 10px; color: #aaa; }
+  .weather-now { display: flex; align-items: center; gap: 12px; padding: 8px 14px; border-bottom: 1px solid #e8eaf0; flex-shrink: 0; }
+  .weather-icon-now { font-size: 30px; }
+  .weather-temp-now { font-size: 28px; font-weight: 300; color: #1a1a1a; }
+  .weather-desc-now { font-size: 11px; color: #555; }
+  .weather-details  { font-size: 10px; color: #888; margin-top: 2px; }
+  .weather-forecast { display: flex; flex: 1; overflow: hidden; }
+  .forecast-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 2px; border-right: 1px solid #e8eaf0; }
+  .forecast-item:last-child { border-right: none; }
+  .forecast-time { color: #888; font-size: 10px; margin-bottom: 2px; }
+  .forecast-icon { font-size: 18px; margin: 2px 0; }
+  .forecast-temp { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+  .forecast-rain { font-size: 10px; color: #2196F3; margin-top: 1px; min-height: 14px; }
+
+  .footer { padding: 3px 24px; display: flex; justify-content: space-between; font-size: 10px; color: #bbb; border-top: 1px solid #eee; flex-shrink: 0; background: white; }
+  .loading-msg { padding: 12px; text-align: center; color: #aaa; font-size: 12px; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #ccc; border-top-color: #EB0000; border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin  { to { transform: rotate(360deg); } }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.25} }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- PANEL A — TRAINS -->
+  <div class="panel-a">
+    <div class="main-header">
+      <div class="header-left"><img class="sbb-logo-img" src="sbb_logo.jpeg" alt="SBB CFF FFS"></div>
+      <div class="header-center"><div class="station-name">Gland</div></div>
+      <div><div class="clock" id="clock">--:--:--</div><div class="date-str" id="dateStr">--</div></div>
+    </div>
+    <div class="col-headers-train">
+      <span>Line</span><span>Destination</span><span>Departure</span><span>In</span><span>Status</span><span style="text-align:center">Track</span>
+    </div>
+    <div class="trains-list" id="trainsList"><div class="loading-msg"><span class="spinner"></span>Loading departures…</div></div>
+    <div class="footer">
+      <span><span class="live-dot"></span> <span id="lastUpdateTrain">Updating…</span></span>
+      <span>transport.opendata.ch</span>
+    </div>
+  </div>
+
+  <!-- RIGHT SIDE -->
+  <div class="panel-right">
+
+    <!-- PANEL B — BUS -->
+    <div class="panel-b">
+      <div class="panel-header bus">
+        <div class="panel-header-left">
+          <span style="font-size:20px;">🚌</span>
+          <div><div class="panel-title">Bus — Gland Gare</div><div class="panel-subtitle">Lines 811 · 830 · 831 · 835 · 836</div></div>
+        </div>
+        <div class="panel-update" id="busUpdate">Updating…</div>
+      </div>
+      <div class="col-headers-bus"><span>Line</span><span>Destination</span><span>Departure</span><span>In</span></div>
+      <div class="bus-list" id="busList"><div class="loading-msg"><span class="spinner"></span>Loading buses…</div></div>
+    </div>
+
+    <!-- PANEL C — BATEAUX CGN -->
+    <div class="panel-c">
+      <div class="panel-header boat">
+        <div class="panel-header-left">
+          <img src="cgn_logo.png" style="height:26px;width:auto;" alt="CGN">
+          <div><div class="panel-title">Nyon Port</div><div class="panel-subtitle">Lac Léman departures</div></div>
+        </div>
+        <div class="panel-update" id="boatUpdate">Updating…</div>
+      </div>
+      <div class="col-headers-boat"><span></span><span>Line</span><span>Destination</span><span>Departure</span><span>In</span></div>
+      <div class="boats-list" id="boatsList"><div class="loading-msg"><span class="spinner"></span>Loading boats…</div></div>
+    </div>
+
+    <!-- PANEL D — ALERTS + WEATHER -->
+    <div class="panel-d">
+      <div class="panel-header alerts">
+        <div class="panel-header-left">
+          <div class="live-dot" id="alertDot"></div>
+          <div class="panel-title">Traffic &amp; Weather</div>
+        </div>
+        <div class="panel-update" id="weatherUpdate">--</div>
+      </div>
+      <div class="panel-d-content">
+        <div class="alerts-zone">
+          <div class="alerts-scroll" id="alertsContent"><div class="no-alerts">No disruptions</div></div>
+        </div>
+        <div class="weather-zone">
+          <div class="weather-header">
+            <span class="weather-title">Gland — Météo</span>
+            <span class="weather-loc" id="weatherTime">--</span>
+          </div>
+          <div class="weather-now">
+            <div class="weather-icon-now" id="wIconNow">--</div>
+            <div>
+              <div class="weather-temp-now" id="wTempNow">--°</div>
+              <div class="weather-desc-now" id="wDescNow">--</div>
+              <div class="weather-details"  id="wDetails">--</div>
+            </div>
+          </div>
+          <div class="weather-forecast" id="weatherForecast"><div class="loading-msg">Loading weather…</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const ICON_BASE  = 'https://icons.app.sbb.ch/icons/';
+  const WORKER_URL = 'https://gland-alerts.cyrille-baptiste.workers.dev';
+  const LAT = 46.4166, LON = 6.2697;
+
+  function updateClock() {
+    const n=new Date(), pad=v=>String(v).padStart(2,'0');
+    document.getElementById('clock').textContent=pad(n.getHours())+':'+pad(n.getMinutes())+':'+pad(n.getSeconds());
+    const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    document.getElementById('dateStr').textContent=days[n.getDay()]+' '+n.getDate()+' '+months[n.getMonth()]+' '+n.getFullYear();
+  }
+  setInterval(updateClock,1000); updateClock();
+
+  function tsToDate(val){
+    if(val==null)return null;
+    if(typeof val==='number')return new Date(val*1000);
+    const d=new Date(val); return isNaN(d.getTime())?null:d;
+  }
+  function fmtHHMM(d){ if(!d)return'--:--'; return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+  function getSchedDate(dep){
+    const s=dep.stop||{};
+    return tsToDate(s.departureTimestamp)||tsToDate(dep.departureTimestamp)||tsToDate(s.departure)||tsToDate(dep.departure);
+  }
+  function countdown(depDate){
+    if(!depDate)return{text:'—',cls:'normal'};
+    const diff=Math.round((depDate-Date.now())/60000);
+    if(diff<0)return{text:'Left',cls:'now'};
+    if(diff===0)return{text:'Now',cls:'now'};
+    if(diff<=5)return{text:diff+' min',cls:'soon'};
+    return{text:diff+' min',cls:'normal'};
+  }
+  function delayMin(stop){ if(!stop||stop.departureDelay==null)return 0; return Math.round(stop.departureDelay/60); }
+
+  function lineIconHtml(cat,num){
+    const c=(cat||'').toLowerCase(),n=(num||'').trim();
+    const primary=ICON_BASE+(n?c+'-'+n:c)+'.svg';
+    const fallback=ICON_BASE+c+'.svg';
+    const label=(cat+' '+(num||'')).trim();
+    return '<div class="line-icon"><img src="'+primary+'" onerror="if(this.src!==\''+fallback+'\'){this.src=\''+fallback+'\';}else{this.style.display=\'none\';this.nextElementSibling.style.display=\'inline-flex\';}" alt="'+label+'"><span class="line-badge-fallback" style="display:none">'+label+'</span></div>';
+  }
+  function statusHtml(delay,cancelled){
+    if(cancelled)return'<div class="status-cell"><img class="status-icon" src="'+ICON_BASE+'cancellation.svg"><span class="status-text cancelled">Cancelled</span></div>';
+    if(delay>0)return'<div class="status-cell"><img class="status-icon" src="'+ICON_BASE+'delay.svg"><span class="status-text delayed">+'+delay+'m</span></div>';
+    return'<div class="status-cell"><span class="status-text on-time">On time</span></div>';
+  }
+
+  function weatherInfo(code,isDay){
+    const n=isDay?0:1;
+    const map={
+      0:[['☀️','Clear'],['🌙','Clear']],1:[['🌤','Mainly clear'],['🌤','Mainly clear']],
+      2:[['⛅','Partly cloudy'],['⛅','Partly cloudy']],3:[['☁️','Overcast'],['☁️','Overcast']],
+      45:[['🌫','Fog'],['🌫','Fog']],48:[['🌫','Icy fog'],['🌫','Icy fog']],
+      51:[['🌦','Drizzle'],['🌦','Drizzle']],53:[['🌦','Drizzle'],['🌦','Drizzle']],
+      61:[['🌧','Light rain'],['🌧','Light rain']],63:[['🌧','Rain'],['🌧','Rain']],
+      65:[['🌧','Heavy rain'],['🌧','Heavy rain']],71:[['🌨','Light snow'],['🌨','Light snow']],
+      73:[['🌨','Snow'],['🌨','Snow']],75:[['❄️','Heavy snow'],['❄️','Heavy snow']],
+      80:[['🌦','Showers'],['🌦','Showers']],81:[['🌦','Showers'],['🌦','Showers']],
+      95:[['⛈','Thunderstorm'],['⛈','Thunderstorm']],96:[['⛈','Hail'],['⛈','Hail']],
+    };
+    const info=map[code]||[['🌡','--'],['🌡','--']];
+    return{icon:info[n][0],desc:info[n][1]};
+  }
+
+  const stopsCache={};
+  async function fetchStopsForDep(dep){
+    const passList=dep.passList||(dep.stop&&dep.stop.passList)||null;
+    if(passList&&passList.length)return passList;
+    const schedDate=getSchedDate(dep); if(!schedDate)return[];
+    const pad=v=>String(v).padStart(2,'0');
+    const dateStr=schedDate.getFullYear()+'-'+pad(schedDate.getMonth()+1)+'-'+pad(schedDate.getDate());
+    const timeStr=pad(schedDate.getHours())+pad(schedDate.getMinutes());
+    try{
+      const r=await fetch('https://transport.opendata.ch/v1/connections?from=Gland&to='+encodeURIComponent(dep.to)+'&date='+dateStr+'&time='+timeStr+'&limit=1');
+      if(!r.ok)return[];
+      const data=await r.json();
+      const conn=data.connections&&data.connections[0]; if(!conn)return[];
+      for(const sec of(conn.sections||[])){ if(sec.journey&&sec.journey.passList&&sec.journey.passList.length)return sec.journey.passList; }
+    }catch(e){}
+    return[];
+  }
+  function nextStopsHtml(passList){
+    if(!passList||!passList.length)return'';
+    const fromIdx=passList.findIndex(s=>s.station&&s.station.name&&s.station.name.toLowerCase().includes('gland'));
+    const after=(fromIdx>=0?passList.slice(fromIdx+1):passList.slice(1)).filter(s=>{
+      const name=(s.station&&s.station.name)||s.name||'';
+      return name.trim()!==''&&name!=='?';
+    });
+    const shown=after.slice(0,after.length>1?Math.min(5,after.length-1):after.length);
+    if(!shown.length)return'';
+    return shown.map((s,i)=>{
+      const name=(s.station&&s.station.name)||s.name||'';
+      const sep=i<shown.length-1?'<span class="stop-sep">›</span>':'';
+      return'<span class="stop-chip"><span class="stop-name">'+name+'</span></span>'+sep;
+    }).join('');
+  }
+
+  // PANEL A — TRAINS
+  let trainsData=[];
+  function refreshTrainCountdowns(){
+    trainsData.forEach((dep,i)=>{
+      const el=document.getElementById('tcd-'+i); if(!el)return;
+      const cd=countdown(getSchedDate(dep)); el.textContent=cd.text; el.className='countdown '+cd.cls;
+    });
+  }
+  setInterval(refreshTrainCountdowns,10000);
+
+  async function refreshTrains(){
+    try{
+      Object.keys(stopsCache).forEach(k=>delete stopsCache[k]);
+      const r=await fetch('https://transport.opendata.ch/v1/stationboard?station=Gland&limit=9&type=departure');
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      const data=await r.json();
+      trainsData=data.stationboard||[];
+      const list=document.getElementById('trainsList');
+      if(!trainsData.length){list.innerHTML='<div class="loading-msg">No departures available.</div>';return;}
+      list.innerHTML=trainsData.map((dep,i)=>{
+        const cat=dep.category||'?',num=dep.number||'';
+        const dest=dep.to||'—';
+        const schedDate=getSchedDate(dep);
+        const sched=fmtHHMM(schedDate);
+        const delay=delayMin(dep.stop);
+        const cancelled=dep.stop&&dep.stop.cancelled;
+        const plat=(dep.stop&&dep.stop.platform)?dep.stop.platform:'—';
+        const cd=countdown(schedDate);
+        const key=(dep.category||'')+(dep.number||'')+(dep.departure||'');
+        const stopsHtml=stopsCache[key]?nextStopsHtml(stopsCache[key]):'';
+        return'<div class="dep-block" id="tblock-'+i+'">'
+          +'<div class="departure-row">'
+          +'<div>'+lineIconHtml(cat,num)+'</div>'
+          +'<div class="destination">'+dest+'</div>'
+          +'<div class="sched-time">'+sched+'</div>'
+          +'<div><span class="countdown '+cd.cls+'" id="tcd-'+i+'">'+cd.text+'</span></div>'
+          +'<div>'+statusHtml(delay,cancelled)+'</div>'
+          +'<div class="platform">'+(plat&&plat!=='—'?'<img src="https://icons.app.sbb.ch/picto/tracks-'+plat+'-fr-small.svg" style="height:22px;width:auto;" alt="'+plat+'">':plat)+'</div>'
+          +'</div>'
+          +'<div class="stops-inline" id="tstops-'+i+'">'+stopsHtml+'</div>'
+          +'</div>';
+      }).join('');
+      trainsData.forEach(async(dep,i)=>{
+        const key=(dep.category||'')+(dep.number||'')+(dep.departure||'');
+        if(!stopsCache[key]){const stops=await fetchStopsForDep(dep);stopsCache[key]=stops;}
+        const el=document.getElementById('tstops-'+i);
+        if(el)el.innerHTML=nextStopsHtml(stopsCache[key]);
+      });
+      const n=new Date(),pad=v=>String(v).padStart(2,'0');
+      document.getElementById('lastUpdateTrain').textContent='Updated '+pad(n.getHours())+':'+pad(n.getMinutes())+':'+pad(n.getSeconds());
+    }catch(e){
+      document.getElementById('trainsList').innerHTML='<div class="loading-msg">Cannot reach SBB API.</div>';
+    }
+  }
+
+  // PANEL B — BUS
+  const BUS_LINES=['811','830','831','835','836'];
+  const BUS_STATIONS=['Gland, gare nord','Gland, gare sud','Gland, gare'];
+
+  async function refreshBuses(){
+    const list=document.getElementById('busList');
+    try{
+      const results=await Promise.allSettled(
+        BUS_STATIONS.map(s=>fetch('https://transport.opendata.ch/v1/stationboard?station='+encodeURIComponent(s)+'&limit=20&type=departure').then(r=>r.ok?r.json():null))
+      );
+      let allDeps=[];
+      for(const res of results){if(res.status==='fulfilled'&&res.value)allDeps=allDeps.concat(res.value.stationboard||[]);}
+      const filtered=allDeps.filter(dep=>{const num=String(dep.number||dep.name||'').replace(/\D/g,'');return BUS_LINES.includes(num);});
+      const seen=new Set();
+      const unique=filtered.filter(dep=>{
+        const key=(dep.number||'')+(dep.to||'')+(dep.departure||'');
+        if(seen.has(key))return false;seen.add(key);return true;
+      }).sort((a,b)=>((getSchedDate(a)||0)-(getSchedDate(b)||0)));
+      const now=Date.now();
+      const soon=unique.filter(dep=>{
+        const d=getSchedDate(dep);if(!d)return false;
+        const diff=Math.round((d-now)/60000);return diff>=-1&&diff<=180;
+      }).slice(0,8);
+      if(!soon.length){list.innerHTML='<div class="loading-msg" style="color:#aaa;font-size:11px;">No bus departures found.</div>';return;}
+      list.innerHTML=soon.map(dep=>{
+        const num=String(dep.number||dep.name||'').replace(/\D/g,'');
+        const dest=dep.to||'—';
+        const cd=countdown(getSchedDate(dep));
+        return'<div class="bus-row"><div><span class="bus-line-badge">'+num+'</span></div><div class="bus-dest">'+dest+'</div><div class="bus-time">'+fmtHHMM(getSchedDate(dep))+'</div><div class="bus-in '+cd.cls+'">'+cd.text+'</div></div>';
+      }).join('');
+      const n=new Date(),pad=v=>String(v).padStart(2,'0');
+      document.getElementById('busUpdate').textContent='Updated '+pad(n.getHours())+':'+pad(n.getMinutes());
+    }catch(e){list.innerHTML='<div class="loading-msg">Cannot reach bus API.</div>';}
+  }
+
+  // PANEL C — BATEAUX CGN
+  const CGN_STATION_NAMES=['Nyon (Lac)','Nyon, Lac','Nyon lac','Nyon, débarcadère','Nyon, CGN'];
+
+  async function refreshBoats(){
+    const list=document.getElementById('boatsList');
+    try{
+      let boats=[];
+      for(const name of CGN_STATION_NAMES){
+        try{
+          const r=await fetch('https://transport.opendata.ch/v1/stationboard?station='+encodeURIComponent(name)+'&limit=6&type=departure');
+          if(!r.ok)continue;
+          const data=await r.json();
+          if((data.stationboard||[]).length>0){boats=data.stationboard.slice(0,6);break;}
+        }catch(e){continue;}
+      }
+      if(!boats.length){list.innerHTML='<div class="loading-msg" style="font-size:11px;color:#aaa;">No CGN departures found.</div>';return;}
+      const now=Date.now();
+      const filtered=boats.filter(dep=>{
+        const d=getSchedDate(dep);if(!d)return false;
+        const diff=Math.round((d-now)/60000);return diff>=-2&&diff<=240;
+      });
+      if(!filtered.length){list.innerHTML='<div class="loading-msg" style="font-size:11px;color:#aaa;">No more CGN departures today.</div>';return;}
+      const boatIcon='<img src="https://icons.app.sbb.ch/picto/jetty-right.svg" style="height:18px;width:auto;" alt="boat">';
+      list.innerHTML=filtered.map(dep=>{
+        const dest=dep.to||'—';
+        const cd=countdown(getSchedDate(dep));
+        const lineNum=(dep.number||dep.name||dep.category||'').replace(/^0+/,'');
+        const lineBadge=lineNum?'<span class="boat-line-badge">'+lineNum+'</span>':'';
+        return'<div class="boat-row"><div class="boat-icon-cell">'+boatIcon+'</div><div>'+lineBadge+'</div><div class="boat-dest">'+dest+'</div><div class="boat-time">'+fmtHHMM(getSchedDate(dep))+'</div><div class="boat-in '+cd.cls+'">'+cd.text+'</div></div>';
+      }).join('');
+      const n=new Date(),pad=v=>String(v).padStart(2,'0');
+      document.getElementById('boatUpdate').textContent='Updated '+pad(n.getHours())+':'+pad(n.getMinutes());
+    }catch(e){list.innerHTML='<div class="loading-msg">Cannot reach CGN API.</div>';}
+  }
+
+  // PANEL D — ALERTS
+  async function refreshAlerts(){
+    try{
+      const r=await fetch(WORKER_URL,{cache:'no-store'});if(!r.ok)return;
+      const data=await r.json();
+      const alerts=(data.alerts||[]).filter(a=>a.header&&a.header.trim()!=='');
+      const content=document.getElementById('alertsContent');
+      const dot=document.getElementById('alertDot');
+      if(!alerts.length){dot.style.background='#4CAF50';content.innerHTML='<div class="no-alerts">No disruptions</div>';return;}
+      dot.style.background='#FF5722';
+      content.innerHTML=alerts.slice(0,3).map(a=>{
+        const cause=a.cause||'';
+        const isCritical=['TECHNICAL_PROBLEM','ACCIDENT'].includes(cause);
+        const isInfo=['CONSTRUCTION','MAINTENANCE'].includes(cause);
+        const cls=isCritical?'alert-critical':isInfo?'alert-info':'alert-warning';
+        const icon=isCritical?'🔴':isInfo?'🔧':'⚠️';
+        const desc=(a.description||'').replace(/<[^>]+>/g,'');
+        const shortDesc=desc.length>80?desc.substring(0,80)+'…':desc;
+        return'<div class="alert-item '+cls+'"><div class="alert-icon-c">'+icon+'</div><div><div class="alert-head-c">'+a.header+'</div>'+(shortDesc?'<div class="alert-desc-c">'+shortDesc+'</div>':'')+'</div></div>';
+      }).join('');
+    }catch(e){}
+  }
+
+  // PANEL D — WEATHER
+  async function refreshWeather(){
+    try{
+      const url='https://api.open-meteo.com/v1/forecast?latitude='+LAT+'&longitude='+LON
+        +'&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,is_day'
+        +'&hourly=temperature_2m,precipitation_probability,weather_code'
+        +'&wind_speed_unit=kmh&forecast_hours=8&timezone=Europe%2FZurich';
+      const r=await fetch(url);if(!r.ok)return;
+      const d=await r.json();
+      const cur=d.current;
+      const info=weatherInfo(cur.weather_code,cur.is_day===1);
+      document.getElementById('wIconNow').textContent=info.icon;
+      document.getElementById('wTempNow').textContent=Math.round(cur.temperature_2m)+'°C';
+      document.getElementById('wDescNow').textContent=info.desc;
+      document.getElementById('wDetails').textContent='💨 '+Math.round(cur.wind_speed_10m)+' km/h  ·  💧 '+cur.relative_humidity_2m+'%';
+      const now=new Date();
+      document.getElementById('weatherTime').textContent=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+      const hourly=d.hourly;
+      const items=[];
+      for(let i=0;i<hourly.time.length&&items.length<6;i++){
+        const t=new Date(hourly.time[i]);
+        if(t<=now)continue;
+        const h=t.getHours();
+        const wi=weatherInfo(hourly.weather_code[i],h>=6&&h<21);
+        items.push({time:String(h).padStart(2,'0')+'h',icon:wi.icon,temp:Math.round(hourly.temperature_2m[i])+'°',rain:hourly.precipitation_probability[i]>10?hourly.precipitation_probability[i]+'%':''});
+      }
+      document.getElementById('weatherForecast').innerHTML=items.map(f=>
+        '<div class="forecast-item"><div class="forecast-time">'+f.time+'</div><div class="forecast-icon">'+f.icon+'</div><div class="forecast-temp">'+f.temp+'</div><div class="forecast-rain">'+(f.rain?'🌧'+f.rain:'')+'</div></div>'
+      ).join('');
+      document.getElementById('weatherUpdate').textContent=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+    }catch(e){document.getElementById('weatherForecast').innerHTML='<div class="loading-msg">Weather unavailable</div>';}
+  }
+
+  // Init
+  refreshTrains(); refreshBuses(); refreshBoats(); refreshAlerts(); refreshWeather();
+  setInterval(refreshTrains,  30000);
+  setInterval(refreshBuses,   30000);
+  setInterval(refreshBoats,   30000);
+  setInterval(refreshAlerts, 120000);
+  setInterval(refreshWeather, 600000);
+</script>
+</body>
+</html>
