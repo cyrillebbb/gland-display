@@ -118,9 +118,10 @@
     flex-shrink:0; height:34px; padding:0 22px;
     display:grid; align-items:center; border-bottom:1px solid var(--line);
     background:#FAFBFC; font-size:13px; font-weight:800; color:#111827;
+    column-gap:8px;
   }
-  .col-headers-bus { grid-template-columns:80px 1fr 106px 88px 118px 68px; }
-  .col-headers-boat { grid-template-columns:80px 1fr 106px 88px 118px 68px; }
+  .col-headers-bus { grid-template-columns:80px 1fr 110px 88px 118px 68px; column-gap:8px; }
+  .col-headers-boat { grid-template-columns:80px 1fr 110px 88px 118px 68px; column-gap:8px; }
 
   .trains-list { flex:1; overflow:hidden; background:#fff; }
   .dep-block { border-bottom:1px solid #EDF0F4; }
@@ -152,8 +153,8 @@
   .bus-row,.boat-row {
     min-height:58px; display:grid; align-items:center; padding:8px 22px; border-bottom:1px solid #F0F2F5;
   }
-  .bus-row { grid-template-columns:80px 1fr 106px 88px 118px 68px; }
-  .boat-row { grid-template-columns:80px 1fr 106px 88px 118px 68px; }
+  .bus-row { grid-template-columns:80px 1fr 110px 88px 118px 68px; column-gap:8px; }
+  .boat-row { grid-template-columns:80px 1fr 110px 88px 118px 68px; column-gap:8px; }
   .bus-row:last-child,.boat-row:last-child { border-bottom:none; }
   .bus-icon-cell,.boat-icon-cell { display:flex; align-items:center; justify-content:flex-start; }
   .bus-icon-cell img,.boat-icon-cell img { height:18px !important; width:auto; }
@@ -164,7 +165,7 @@
   .bus-line-badge.carpostal { background:var(--post-yellow); color:#111; }
   .bus-line-badge.tug { background:#E30613; color:white; }
   .boat-line-badge { background:var(--cgn-blue); color:white; min-width:42px; font-size:15px; }
-  .bus-dest,.boat-dest { font-size:20px; font-weight:700; padding-left:6px; padding-right:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .bus-dest,.boat-dest { font-size:20px; font-weight:700; padding-left:6px; padding-right:20px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .bus-time,.boat-time { font-size:21px; font-weight:600; font-variant-numeric:tabular-nums; }
   .bus-in,.boat-in { font-size:18px; font-weight:900; color:#98A2B3; font-variant-numeric:tabular-nums; white-space:nowrap; }
   .bus-in.soon,.boat-in.soon { color:#FF1744; } .bus-in.now,.boat-in.now { color:#FF3D00; }
