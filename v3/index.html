@@ -91,7 +91,7 @@
   .col-headers-boat {
     background: #eef0f5;
     display: grid;
-    grid-template-columns: 50px 50px 1fr 90px 80px 60px;
+    grid-template-columns: 50px 50px 1fr 90px 80px;
     padding: 7px 20px;
     font-size: 11px;
     text-transform: uppercase;
@@ -146,7 +146,7 @@
   .boats-list { flex: 1; overflow: hidden; background: #ffffff; }
   .boat-row {
     display: grid;
-    grid-template-columns: 50px 50px 1fr 90px 80px 60px;
+    grid-template-columns: 50px 50px 1fr 90px 80px;
     padding: 10px 20px;
     border-bottom: 1px solid #eef0f5;
     align-items: center;
@@ -259,7 +259,6 @@
         <span>Destination</span>
         <span>Departure</span>
         <span>In</span>
-        <span style="text-align:center">Quai</span>
       </div>
       <div class="boats-list" id="boatsList">
         <div class="loading-msg"><span class="spinner"></span>Loading boats…</div>
@@ -505,7 +504,6 @@
           +'<div class="boat-dest">'+dest+'</div>'
           +'<div class="boat-time">'+sched+'</div>'
           +'<div class="boat-in '+cd.cls+'">'+cd.text+'</div>'
-          +'<div class="boat-track">'+plat+'</div>'
           +'</div>';
       }).join('');
 
