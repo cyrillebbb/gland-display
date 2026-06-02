@@ -119,8 +119,8 @@
     display:grid; align-items:center; border-bottom:1px solid var(--line);
     background:#FAFBFC; font-size:13px; font-weight:800; color:#111827;
   }
-  .col-headers-bus { grid-template-columns:36px 68px 1fr 76px 70px; }
-  .col-headers-boat { grid-template-columns:36px 62px 1fr 76px 70px; }
+  .col-headers-bus { grid-template-columns:36px 68px 1fr 76px 70px 110px; }
+  .col-headers-boat { grid-template-columns:36px 62px 1fr 76px 70px 110px; }
 
   .trains-list { flex:1; overflow:hidden; background:#fff; }
   .dep-block { border-bottom:1px solid #EDF0F4; }
@@ -152,8 +152,8 @@
   .bus-row,.boat-row {
     min-height:58px; display:grid; align-items:center; padding:8px 22px; border-bottom:1px solid #F0F2F5;
   }
-  .bus-row { grid-template-columns:36px 68px 1fr 76px 70px; }
-  .boat-row { grid-template-columns:36px 62px 1fr 76px 70px; }
+  .bus-row { grid-template-columns:36px 68px 1fr 76px 70px 110px; }
+  .boat-row { grid-template-columns:36px 62px 1fr 76px 70px 110px; }
   .bus-row:last-child,.boat-row:last-child { border-bottom:none; }
   .bus-icon-cell,.boat-icon-cell { display:flex; align-items:center; justify-content:flex-start; }
   .bus-icon-cell img,.boat-icon-cell img { height:18px !important; width:auto; }
@@ -164,9 +164,9 @@
   .bus-line-badge.carpostal { background:var(--post-yellow); color:#111; }
   .bus-line-badge.tug { background:#E30613; color:white; }
   .boat-line-badge { background:var(--cgn-blue); color:white; min-width:42px; font-size:15px; }
-  .bus-dest,.boat-dest { font-size:17px; font-weight:900; padding-left:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .bus-time,.boat-time { font-size:18px; font-weight:650; font-variant-numeric:tabular-nums; }
-  .bus-in,.boat-in { font-size:16px; font-weight:900; color:#98A2B3; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .bus-dest,.boat-dest { font-size:20px; font-weight:700; padding-left:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .bus-time,.boat-time { font-size:21px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .bus-in,.boat-in { font-size:18px; font-weight:900; color:#98A2B3; font-variant-numeric:tabular-nums; white-space:nowrap; }
   .bus-in.soon,.boat-in.soon { color:#FF1744; } .bus-in.now,.boat-in.now { color:#FF3D00; }
 
   .alerts-scroll {
@@ -236,7 +236,7 @@
       </div>
     </div>
     <div class="col-headers-train">
-      <span>Line</span><span>Destination</span><span>Departure</span><span>In</span><span>Status</span><span style="text-align:center">Track</span>
+      <span>Line</span><span>Destination</span><span>Dep.</span><span>In</span><span>Status</span><span style="text-align:center">Track</span>
     </div>
     <div class="trains-list" id="trainsList"><div class="loading-msg"><span class="spinner"></span>Loading departures…</div></div>
     <div class="footer"><span><span class="live-dot"></span> <span id="lastUpdateTrain">Updating…</span></span><span>transport.opendata.ch</span></div>
@@ -252,7 +252,7 @@
           </div>
           
         </div>
-        <div class="col-headers-bus"><span></span><span>Line</span><span>Destination</span><span>Dep.</span><span>In</span></div>
+        <div class="col-headers-bus"><span></span><span>Line</span><span>Destination</span><span>Dep.</span><span>In</span><span>Status</span></div>
         <div class="bus-list" id="busList"><div class="loading-msg"><span class="spinner"></span>Loading…</div></div>
       </section>
 
@@ -264,7 +264,7 @@
           </div>
           
         </div>
-        <div class="col-headers-boat"><span></span><span>Line</span><span>Destination</span><span>Dep.</span><span>In</span></div>
+        <div class="col-headers-boat"><span></span><span>Line</span><span>Destination</span><span>Dep.</span><span>In</span><span>Status</span></div>
         <div class="boats-list" id="boatsList"><div class="loading-msg"><span class="spinner"></span>Loading…</div></div>
       </section>
     </div>
@@ -455,6 +455,7 @@
           +'<div class="bus-dest">'+dest+'</div>'
           +'<div class="bus-time">'+fmtHHMM(getSchedDate(dep))+'</div>'
           +'<div class="bus-in '+cd.cls+'">'+cd.text+'</div>'
+          +'<div>'+statusHtml(delayMin(dep.stop),dep.stop&&dep.stop.cancelled)+'</div>'
           +'</div>';
       }).join('');
       const n=new Date(),pad=v=>String(v).padStart(2,'0');
@@ -496,6 +497,7 @@
           +'<div class="boat-dest">'+dest+'</div>'
           +'<div class="boat-time">'+fmtHHMM(getSchedDate(dep))+'</div>'
           +'<div class="boat-in '+cd.cls+'">'+cd.text+'</div>'
+          +'<div>'+statusHtml(delayMin(dep.stop),dep.stop&&dep.stop.cancelled)+'</div>'
           +'</div>';
       }).join('');
       const n=new Date(),pad=v=>String(v).padStart(2,'0');
