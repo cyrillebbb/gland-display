@@ -583,7 +583,7 @@
   function initMap(){
     // Use CartoDB Positron — cleaner, less cluttered than OSM default
     const map = L.map('map', {
-      center: [46.4145, 6.2660],
+      center: [46.4190, 6.2695],
       zoom: 16,
       zoomControl: false,
       attributionControl: true,
@@ -626,30 +626,23 @@
       });
     }
 
-    // ── MARKERS ──
+    // ── MARKERS — coordonnées GPS exactes ──
 
-    // 🚂 Gland Gare (train) — exact coords from map
-    L.marker([46.4168, 6.2683], {icon: makeMarker('#EB0000','white','🚂 Gland Gare','RE33 · IR57')})
+    // 🚂 Gland Gare CFF (train)
+    L.marker([46.42001665516712, 6.269129424896002], {icon: makeMarker('#EB0000','white','🚂 Gland Gare','RE33 · IR57')})
       .addTo(map);
 
     // 🚌 Gland Gare Nord (bus 811, 830, 831)
-    L.marker([46.4175, 6.2670], {icon: makeMarker('#FFCC00','#1a1a1a','🚌 Gare Nord','811 · 830 · 831')})
+    L.marker([46.42003624492582, 6.2689101346166005], {icon: makeMarker('#FFCC00','#1a1a1a','🚌 Gare Nord','811 · 830 · 831')})
       .addTo(map);
 
-    // 🚌 Gland Gare Sud (bus 835, 836) — from image circle top right
-    L.marker([46.4163, 6.2740], {icon: makeMarker('#E30613','white','🚌 Gare Sud','835 · 836')})
+    // 🚌 Gland Gare Sud (bus 835, 836)
+    L.marker([46.420166178377784, 6.271215490043696], {icon: makeMarker('#E30613','white','🚌 Gare Sud','835 · 836')})
       .addTo(map);
 
-    // 🚌 Mont-Blanc Sud (bus stop) — bottom circle on image
-    L.marker([46.4095, 6.2710], {icon: makeMarker('#FFCC00','#1a1a1a','🚌 Mont-Blanc Sud','811 · 830')})
+    // 🏢 Swissquote
+    L.marker([46.417776429346056, 6.268021915171526], {icon: makeMarker('#1a1a1a','white','🏢 Swissquote','Chemin de la Crétaux')})
       .addTo(map);
-
-    // 🏢 Swissquote — middle circle on image
-    L.marker([46.4133, 6.2635], {icon: makeMarker('#1a1a1a','white','🏢 Swissquote','Chemin de la Crétaux')})
-      .addTo(map);
-
-    // ⛵ Nyon Port CGN — not visible at this zoom, add as info
-    // (Nyon is ~4km away, better shown at zoom 13)
   }
 
   // ═══════════ Init ═══════════
