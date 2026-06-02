@@ -30,7 +30,7 @@
   .date-str { font-size: 10px; color: #888; margin-top: 2px; text-align: right; }
 
   .panel-header { padding: 7px 20px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-  .panel-header.bus    { background: #2E7D32; }
+  .panel-header.bus    { background: #333333; }
   .panel-header.boat   { background: #193B79; }
   .panel-header.alerts { background: #1a1a1a; }
   .panel-header-left { display: flex; align-items: center; gap: 10px; }
@@ -40,7 +40,7 @@
   .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #4CAF50; animation: pulse 2s infinite; display: inline-block; }
 
   .col-headers-train { background: #e8e8e8; display: grid; grid-template-columns: 95px 1fr 110px 85px 105px 65px; padding: 6px 24px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #666; border-bottom: 1px solid #ccc; flex-shrink: 0; }
-  .col-headers-bus   { background: #E8F5E9; display: grid; grid-template-columns: 60px 1fr 80px 70px; padding: 5px 20px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #2E7D32; border-bottom: 1px solid #C8E6C9; flex-shrink: 0; }
+  .col-headers-bus   { background: #f5f5f5; display: grid; grid-template-columns: 40px 70px 1fr 80px 70px; padding: 5px 20px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #555; border-bottom: 1px solid #ddd; flex-shrink: 0; }
   .col-headers-boat  { background: #eef0f5; display: grid; grid-template-columns: 40px 50px 1fr 80px 70px; padding: 5px 20px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #193B79; border-bottom: 1px solid #c5cde0; flex-shrink: 0; }
 
   .trains-list { flex: 1; overflow: hidden; background: #fff; }
@@ -64,9 +64,12 @@
   .platform { font-size: 16px; font-weight: 700; color: #333; text-align: center; }
 
   .bus-list { flex: 1; overflow: hidden; background: #fff; }
-  .bus-row { display: grid; grid-template-columns: 60px 1fr 80px 70px; padding: 7px 20px; border-bottom: 1px solid #E8F5E9; align-items: center; }
+  .bus-row { display: grid; grid-template-columns: 40px 70px 1fr 80px 70px; padding: 7px 20px; border-bottom: 1px solid #f0f0f0; align-items: center; }
   .bus-row:last-child { border-bottom: none; }
-  .bus-line-badge { display: inline-flex; align-items: center; justify-content: center; background: #2E7D32; color: white; font-size: 12px; font-weight: 700; padding: 3px 6px; border-radius: 3px; min-width: 36px; }
+  .bus-icon-cell { display: flex; align-items: center; }
+  .bus-line-badge { display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; padding: 3px 6px; border-radius: 3px; min-width: 42px; }
+  .bus-line-badge.carpostal { background: #FFCC00; color: #1a1a1a; }
+  .bus-line-badge.tug       { background: #E30613; color: white; }
   .bus-dest { font-size: 16px; font-weight: 600; padding-left: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .bus-time { font-size: 18px; font-weight: 300; font-variant-numeric: tabular-nums; }
   .bus-in   { font-size: 12px; font-weight: 600; color: #aaa; font-variant-numeric: tabular-nums; }
@@ -145,12 +148,12 @@
     <div class="panel-b">
       <div class="panel-header bus">
         <div class="panel-header-left">
-          <span style="font-size:20px;">🚌</span>
+          <img src="https://icons.app.sbb.ch/icons/bus.svg" style="height:26px;width:auto;filter:brightness(10);" alt="bus">
           <div><div class="panel-title">Bus — Gland Gare</div><div class="panel-subtitle">Lines 811 · 830 · 831 · 835 · 836</div></div>
         </div>
         <div class="panel-update" id="busUpdate">Updating…</div>
       </div>
-      <div class="col-headers-bus"><span>Line</span><span>Destination</span><span>Departure</span><span>In</span></div>
+      <div class="col-headers-bus"><span></span><span>Line</span><span>Destination</span><span>Departure</span><span>In</span></div>
       <div class="bus-list" id="busList"><div class="loading-msg"><span class="spinner"></span>Loading buses…</div></div>
     </div>
 
@@ -381,7 +384,10 @@
         const num=String(dep.number||dep.name||'').replace(/\D/g,'');
         const dest=dep.to||'—';
         const cd=countdown(getSchedDate(dep));
-        return'<div class="bus-row"><div><span class="bus-line-badge">'+num+'</span></div><div class="bus-dest">'+dest+'</div><div class="bus-time">'+fmtHHMM(getSchedDate(dep))+'</div><div class="bus-in '+cd.cls+'">'+cd.text+'</div></div>';
+        const isTUG = num==='831';
+        const badgeCls = isTUG ? 'tug' : 'carpostal';
+        const busIcon='<img src="https://icons.app.sbb.ch/icons/bus.svg" style="height:18px;width:auto;" alt="bus">';
+        return'<div class="bus-row"><div class="bus-icon-cell">'+busIcon+'</div><div><span class="bus-line-badge '+badgeCls+'">'+num+'</span></div><div class="bus-dest">'+dest+'</div><div class="bus-time">'+fmtHHMM(getSchedDate(dep))+'</div><div class="bus-in '+cd.cls+'">'+cd.text+'</div></div>';
       }).join('');
       const n=new Date(),pad=v=>String(v).padStart(2,'0');
       document.getElementById('busUpdate').textContent='Updated '+pad(n.getHours())+':'+pad(n.getMinutes());
