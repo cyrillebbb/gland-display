@@ -9,597 +9,589 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <style>
-:root {
---sbb-red:#EB0000;
---sbb-dark-red:#C90012;
---post-yellow:#FFCC00;
---cgn-blue:#193B79;
---track-blue:#1F2A78;
---bg:#EEF1F5;
---card:#FFFFFF;
---text:#07101F;
---muted:#6B7280;
---line:#E6EAF0;
---green:#009640;
---orange:#FF8A00;
---shadow:0 10px 28px rgba(15,23,42,.08);
---radius:16px;
-}
-* { margin:0; padding:0; box-sizing:border-box; }
-html, body {
-width:1920px; height:1080px; overflow:hidden;
-background:var(--bg);
-color:var(--text);
-font-family:"Inter","Segoe UI","Helvetica Neue",Arial,sans-serif;
-font-weight:500;
-}
-
-.layout {
-width:1920px; height:1080px;
-padding:14px 18px 14px 18px;
-display:grid;
-grid-template-columns: 930px 1fr;
-grid-template-rows: 72px 1fr 152px;
-gap:16px;
-}
-
-.top-header {
-grid-column:1 / 3;
-background:var(--card);
-border-radius:var(--radius);
-box-shadow:var(--shadow);
-display:flex; align-items:center; justify-content:space-between;
-padding:0 28px;
-overflow:hidden;
-position:relative;
-}
-.brand-zone { display:flex; align-items:center; gap:22px; min-width:600px; }
-.sbb-logo-img { height:34px; width:auto; display:block; }
-.header-divider { width:2px; height:36px; background:#D4DAE3; }
-.station-cluster { display:flex; align-items:center; gap:16px; }
-.station-name { font-size:36px; line-height:34px; font-weight:900; letter-spacing:-.7px; }
-.date-str { font-size:14px; color:var(--muted); margin-top:5px; font-weight:600; }
-.clock-wrap { display:flex; align-items:center; gap:16px; }
-.clock-icon { font-size:30px; color:#778092; transform:translateY(1px); }
-.clock { font-size:52px; line-height:52px; font-weight:900; font-variant-numeric:tabular-nums; letter-spacing:1px; }
-.clock::first-letter { color:inherit; }
-
-.panel { background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; min-width:0; }
-.panel-a { grid-column:1; grid-row:2; display:flex; flex-direction:column; }
-.right-stack { grid-column:2; grid-row:2; display:grid; grid-template-rows: 272px 1fr; gap:16px; min-height:0; }
-.row-top-right { display:grid; grid-template-columns:1fr 1fr; gap:16px; min-height:0; }
-.panel-b,.panel-c { display:flex; flex-direction:column; }
-.panel-d { position:relative; overflow:hidden; border-radius:var(--radius); }
-#map { width:100%; height:100%; border-radius:var(--radius); }
-.panel-e { grid-column:1 / 3; grid-row:3; display:flex; flex-direction:column; background:linear-gradient(180deg,#FFF7E9 0%,#FFF3DC 100%); }
-
-.main-header { display:none; }
-
-.panel-header { flex-shrink:0; display:flex; align-items:center; justify-content:space-between; }
-.panel-header.train {
-height:76px; padding:0 24px; color:#1a1a1a;
-background:#ffffff;
-border-bottom:3px solid var(--sbb-red);
-}
-.panel-header.bus {
-height:74px; padding:0 22px;
-color:#111; background:linear-gradient(180deg,#FFD928 0%, var(--post-yellow) 100%);
-}
-.panel-header.boat {
-height:74px; padding:0 22px; color:#fff;
-background:linear-gradient(135deg,#0F2C64 0%, var(--cgn-blue) 30%, #244F96 100%);
-}
-.panel-header.alerts {
-height:42px; padding:0 24px; color:#101828;
-background:rgba(255,255,255,.58); border-bottom:1px solid rgba(255,168,45,.22);
-}
-.panel-header-left { display:flex; align-items:center; gap:16px; min-width:0; }
-.panel-title { font-size:26px; line-height:28px; font-weight:900; letter-spacing:-.35px; color:inherit; white-space:nowrap; }
-.panel-header.train .panel-title { color:#1a1a1a; }
-.panel-title.dark { color:#111; }
-.panel-subtitle { font-size:14px; color:rgba(255,255,255,.82); margin-top:3px; font-weight:700; }
-.panel-subtitle.dark { color:#202020; }
-.panel-update { font-size:14px; font-weight:700; color:rgba(255,255,255,.85); font-variant-numeric:tabular-nums; }
-.panel-update.dark { color:#111; }
-.panel-header-icon {
-width:44px; height:44px; object-fit:contain; display:block;
-}
-.panel-header-icon.white { filter:brightness(0) invert(1); }
-.live-dot { width:8px; height:8px; border-radius:50%; background:#22C55E; display:inline-block; animation:pulse 2s infinite; }
-
-.col-headers-train {
-flex-shrink:0; height:32px; padding:0 24px;
-display:grid; grid-template-columns:112px 1fr 106px 88px 118px 68px; align-items:center;
-background:var(--sbb-red); color:white; font-size:15px; font-weight:900;
-}
-
-
-.col-headers-bus, .col-headers-boat {
-flex-shrink:0; height:34px; padding:0 22px;
-display:grid; align-items:center; border-bottom:1px solid var(--line);
-background:#FAFBFC; font-size:13px; font-weight:800; color:#111827;
-column-gap:8px;
-}
-.col-headers-bus { grid-template-columns:80px 1fr 110px 88px 118px 68px; column-gap:8px; }
-.col-headers-boat { grid-template-columns:80px 1fr 110px 88px 118px 68px; column-gap:8px; }
-
-.trains-list { flex:1; overflow:hidden; background:#fff; }
-.dep-block { border-bottom:1px solid #EDF0F4; }
-.dep-block:last-child { border-bottom:none; }
-.departure-row {
-min-height:62px; display:grid; grid-template-columns:112px 1fr 106px 88px 118px 68px;
-align-items:center; padding:10px 24px 2px 24px;
-}
-.stops-inline { display:flex; align-items:center; overflow:hidden; padding:0 24px 10px 128px; min-height:22px; }
-.stop-chip { display:flex; align-items:center; gap:2px; white-space:nowrap; }
-.stop-name { font-size:14px; line-height:18px; color:#667085; font-weight:600; }
-.stop-sep { color:#B5BDCA; font-size:15px; margin:0 7px; }
-.line-icon img { height:34px; width:auto; display:block; }
-.line-badge-fallback { display:inline-flex; align-items:center; justify-content:center; padding:4px 8px; border-radius:4px; border:2px solid var(--sbb-red); font-weight:900; font-size:22px; background:#fff; color:var(--sbb-red); }
-.destination { font-size:20px; font-weight:700; letter-spacing:-.2px; padding-left:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.sched-time { font-size:25px; font-weight:600; font-variant-numeric:tabular-nums; }
-.countdown { font-size:18px; font-weight:900; font-variant-numeric:tabular-nums; }
-.countdown.normal { color:#98A2B3; } .countdown.soon { color:var(--orange); } .countdown.now { color:#FF3D00; }
-.status-cell { display:flex; align-items:center; gap:7px; }
-.status-icon { width:15px; height:15px; }
-.status-text { font-size:15px; font-weight:900; white-space:nowrap; }
-.status-text.on-time { color:var(--green); }
-.status-text.on-time::before { content:'●'; margin-right:8px; font-size:13px; }
-.status-text.delayed { color:#FF5722; } .status-text.cancelled { color:#FF1744; }
-.platform { font-size:18px; font-weight:900; text-align:center; }
-.platform img { height:30px !important; filter:drop-shadow(0 3px 5px rgba(15,23,42,.25)); }
-
-.bus-list,.boats-list { flex:1; overflow:hidden; background:#fff; }
-.bus-row,.boat-row {
-min-height:58px; display:grid; align-items:center; padding:8px 22px; border-bottom:1px solid #F0F2F5;
-}
-.bus-row { grid-template-columns:80px 1fr 110px 88px 118px 68px; column-gap:8px; }
-.boat-row { grid-template-columns:80px 1fr 110px 88px 118px 68px; column-gap:8px; }
-.bus-row:last-child,.boat-row:last-child { border-bottom:none; }
-.bus-icon-cell,.boat-icon-cell { display:flex; align-items:center; justify-content:flex-start; }
-.bus-icon-cell img,.boat-icon-cell img { height:18px !important; width:auto; }
-.bus-line-badge,.boat-line-badge {
-display:inline-flex; align-items:center; justify-content:center; min-width:48px; height:30px; border-radius:7px;
-font-size:16px; font-weight:900; box-shadow:0 4px 8px rgba(15,23,42,.08);
-}
-.bus-line-badge.carpostal { background:var(--post-yellow); color:#111; }
-.bus-line-badge.tug { background:#E30613; color:white; }
-.boat-line-badge { background:var(--cgn-blue); color:white; min-width:42px; font-size:15px; }
-  .bus-dest,.boat-dest { font-size:20px; font-weight:700; padding-left:6px; padding-right:20px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .bus-dest,.boat-dest { font-size:20px; font-weight:700; padding-left:6px; padding-right:40px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.bus-time,.boat-time { font-size:21px; font-weight:600; font-variant-numeric:tabular-nums; }
-.bus-in,.boat-in { font-size:18px; font-weight:900; color:#98A2B3; font-variant-numeric:tabular-nums; white-space:nowrap; }
-.bus-in.soon,.boat-in.soon { color:#FF1744; } .bus-in.now,.boat-in.now { color:#FF3D00; }
-
-.alerts-scroll {
-flex:1; overflow:hidden; display:flex; flex-direction:row; align-items:stretch; gap:14px;
-padding:10px 24px 18px 24px;
-}
-.no-alerts { width:100%; display:flex; align-items:center; justify-content:center; font-size:18px; color:#98A2B3; font-style:italic; background:white; border-radius:14px; }
-.alert-item {
-flex:1; min-width:0; display:flex; align-items:flex-start; gap:12px;
-padding:16px 18px; border-radius:14px; background:rgba(255,255,255,.86);
-border:1px solid rgba(255,168,45,.28); box-shadow:0 3px 10px rgba(15,23,42,.04);
-}
-.alert-item.alert-warning { border-left:5px solid var(--orange); }
-.alert-item.alert-critical { border-left:5px solid #F44336; background:#FFF3F2; }
-.alert-item.alert-info { border-left:5px solid #2196F3; background:#F1F8FF; }
-.alert-icon-c { font-size:23px; flex-shrink:0; margin-top:-1px; }
-.alert-head-c { font-size:17px; font-weight:900; line-height:1.25; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.alert-desc-c { font-size:14px; color:#374151; margin-top:5px; line-height:1.25; max-height:54px; overflow:hidden; }
-  .alert-qr {
-    flex:0 0 250px; display:flex; align-items:center; gap:16px; justify-content:center;
-    padding:12px 18px; border-radius:14px; background:#FFE9C7; border:1px solid rgba(255,168,45,.25);
+  :root {
+    --sbb-red:#EB0000;
+    --sbb-dark-red:#C90012;
+    --post-yellow:#FFCC00;
+    --cgn-blue:#193B79;
+    --track-blue:#1F2A78;
+    --bg:#EEF1F5;
+    --card:#FFFFFF;
+    --text:#07101F;
+    --muted:#6B7280;
+    --line:#E6EAF0;
+    --green:#009640;
+    --orange:#FF8A00;
+    --shadow:0 10px 28px rgba(15,23,42,.08);
+    --radius:16px;
   }
-  .alert-qr-box { width:72px; height:72px; background:white; border-radius:8px; display:grid; place-items:center; font-size:42px; }
-  .alert-qr-text { font-size:17px; font-weight:900; line-height:1.2; } .alert-qr-text span { color:#F97316; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:1920px; height:1080px; overflow:hidden;
+    background:var(--bg);
+    color:var(--text);
+    font-family:"Inter","Segoe UI","Helvetica Neue",Arial,sans-serif;
+    font-weight:500;
+  }
+
+  .layout {
+    width:1920px; height:1080px;
+    padding:14px 18px 14px 18px;
+    display:grid;
+    grid-template-columns: 930px 1fr;
+    grid-template-rows: 72px 1fr 152px;
+    gap:16px;
+  }
+
+  .top-header {
+    grid-column:1 / 3;
+    background:var(--card);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 28px;
+    overflow:hidden;
+    position:relative;
+  }
+  .brand-zone { display:flex; align-items:center; gap:22px; min-width:600px; }
+  .sbb-logo-img { height:34px; width:auto; display:block; }
+  .header-divider { width:2px; height:36px; background:#D4DAE3; }
+  .station-cluster { display:flex; align-items:center; gap:16px; }
+  .station-name { font-size:36px; line-height:34px; font-weight:900; letter-spacing:-.7px; }
+  .date-str { font-size:14px; color:var(--muted); margin-top:5px; font-weight:600; }
+  .clock-wrap { display:flex; align-items:center; gap:16px; }
+  .clock-icon { font-size:30px; color:#778092; transform:translateY(1px); }
+  .clock { font-size:52px; line-height:52px; font-weight:900; font-variant-numeric:tabular-nums; letter-spacing:1px; }
+  .clock::first-letter { color:inherit; }
+
+  .panel { background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; min-width:0; }
+  .panel-a { grid-column:1; grid-row:2; display:flex; flex-direction:column; }
+  .right-stack { grid-column:2; grid-row:2; display:grid; grid-template-rows: 272px 1fr; gap:16px; min-height:0; }
+  .row-top-right { display:grid; grid-template-columns:1fr 1fr; gap:16px; min-height:0; }
+  .panel-b,.panel-c { display:flex; flex-direction:column; }
+  .panel-d { position:relative; overflow:hidden; border-radius:var(--radius); }
+  #map { width:100%; height:100%; border-radius:var(--radius); }
+  .panel-e { grid-column:1 / 3; grid-row:3; display:flex; flex-direction:column; background:linear-gradient(180deg,#FFF7E9 0%,#FFF3DC 100%); }
+
+  .main-header { display:none; }
+
+  .panel-header { flex-shrink:0; display:flex; align-items:center; justify-content:space-between; }
+  .panel-header.train {
+    height:76px; padding:0 24px; color:#1a1a1a;
+    background:#ffffff;
+    border-bottom:3px solid var(--sbb-red);
+  }
+  .panel-header.bus {
+    height:74px; padding:0 22px;
+    color:#111; background:linear-gradient(180deg,#FFD928 0%, var(--post-yellow) 100%);
+  }
+  .panel-header.boat {
+    height:74px; padding:0 22px; color:#fff;
+    background:linear-gradient(135deg,#0F2C64 0%, var(--cgn-blue) 30%, #244F96 100%);
+  }
+  .panel-header.alerts {
+    height:42px; padding:0 24px; color:#101828;
+    background:rgba(255,255,255,.58); border-bottom:1px solid rgba(255,168,45,.22);
+  }
+  .panel-header-left { display:flex; align-items:center; gap:16px; min-width:0; }
+  .panel-title { font-size:26px; line-height:28px; font-weight:900; letter-spacing:-.35px; color:inherit; white-space:nowrap; }
+  .panel-header.train .panel-title { color:#1a1a1a; }
+  .panel-title.dark { color:#111; }
+  .panel-subtitle { font-size:14px; color:rgba(255,255,255,.82); margin-top:3px; font-weight:700; }
+  .panel-subtitle.dark { color:#202020; }
+  .panel-update { font-size:14px; font-weight:700; color:rgba(255,255,255,.85); font-variant-numeric:tabular-nums; }
+  .panel-update.dark { color:#111; }
+  .panel-header-icon {
+    width:44px; height:44px; object-fit:contain; display:block;
+  }
+  .panel-header-icon.white { filter:brightness(0) invert(1); }
+  .live-dot { width:8px; height:8px; border-radius:50%; background:#22C55E; display:inline-block; animation:pulse 2s infinite; }
+
+  .col-headers-train {
+    flex-shrink:0; height:32px; padding:0 24px;
+    display:grid; grid-template-columns:112px 1fr 106px 88px 118px 68px; align-items:center;
+    background:var(--sbb-red); color:white; font-size:15px; font-weight:900;
+  }
 
 
-.footer { flex-shrink:0; height:34px; padding:0 24px; display:flex; justify-content:space-between; align-items:center; font-size:12px; color:#98A2B3; border-top:1px solid #EDF0F4; background:#fff; font-weight:600; }
+  .col-headers-bus, .col-headers-boat {
+    flex-shrink:0; height:34px; padding:0 22px;
+    display:grid; align-items:center; border-bottom:1px solid var(--line);
+    background:#FAFBFC; font-size:13px; font-weight:800; color:#111827;
+    column-gap:8px;
+  }
+  .col-headers-bus { grid-template-columns:80px 1fr 110px 88px 118px 68px; column-gap:8px; }
+  .col-headers-boat { grid-template-columns:80px 1fr 110px 88px 118px 68px; column-gap:8px; }
 
-.loading-msg { padding:18px; text-align:center; color:#98A2B3; font-size:14px; font-weight:700; }
-.spinner { display:inline-block; width:14px; height:14px; border:2px solid #D0D5DD; border-top-color:var(--sbb-red); border-radius:50%; animation:spin .8s linear infinite; vertical-align:middle; margin-right:7px; }
-@keyframes spin { to { transform:rotate(360deg); } }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.25} }
+  .trains-list { flex:1; overflow:hidden; background:#fff; }
+  .dep-block { border-bottom:1px solid #EDF0F4; }
+  .dep-block:last-child { border-bottom:none; }
+  .departure-row {
+    min-height:62px; display:grid; grid-template-columns:112px 1fr 106px 88px 118px 68px;
+    align-items:center; padding:10px 24px 2px 24px;
+  }
+  .stops-inline { display:flex; align-items:center; overflow:hidden; padding:0 24px 10px 128px; min-height:22px; }
+  .stop-chip { display:flex; align-items:center; gap:2px; white-space:nowrap; }
+  .stop-name { font-size:14px; line-height:18px; color:#667085; font-weight:600; }
+  .stop-sep { color:#B5BDCA; font-size:15px; margin:0 7px; }
+  .line-icon img { height:34px; width:auto; display:block; }
+  .line-badge-fallback { display:inline-flex; align-items:center; justify-content:center; padding:4px 8px; border-radius:4px; border:2px solid var(--sbb-red); font-weight:900; font-size:22px; background:#fff; color:var(--sbb-red); }
+  .destination { font-size:20px; font-weight:700; letter-spacing:-.2px; padding-left:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sched-time { font-size:25px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .countdown { font-size:18px; font-weight:900; font-variant-numeric:tabular-nums; }
+  .countdown.normal { color:#98A2B3; } .countdown.soon { color:var(--orange); } .countdown.now { color:#FF3D00; }
+  .status-cell { display:flex; align-items:center; gap:7px; }
+  .status-icon { width:15px; height:15px; }
+  .status-text { font-size:15px; font-weight:900; white-space:nowrap; }
+  .status-text.on-time { color:var(--green); }
+  .status-text.on-time::before { content:'●'; margin-right:8px; font-size:13px; }
+  .status-text.delayed { color:#FF5722; } .status-text.cancelled { color:#FF1744; }
+  .platform { font-size:18px; font-weight:900; text-align:center; }
+  .platform img { height:30px !important; filter:drop-shadow(0 3px 5px rgba(15,23,42,.25)); }
+
+  .bus-list,.boats-list { flex:1; overflow:hidden; background:#fff; }
+  .bus-row,.boat-row {
+    min-height:58px; display:grid; align-items:center; padding:8px 22px; border-bottom:1px solid #F0F2F5;
+  }
+  .bus-row { grid-template-columns:80px 1fr 110px 88px 118px 68px; column-gap:8px; }
+  .boat-row { grid-template-columns:80px 1fr 110px 88px 118px 68px; column-gap:8px; }
+  .bus-row:last-child,.boat-row:last-child { border-bottom:none; }
+  .bus-icon-cell,.boat-icon-cell { display:flex; align-items:center; justify-content:flex-start; }
+  .bus-icon-cell img,.boat-icon-cell img { height:18px !important; width:auto; }
+  .bus-line-badge,.boat-line-badge {
+    display:inline-flex; align-items:center; justify-content:center; min-width:48px; height:30px; border-radius:7px;
+    font-size:16px; font-weight:900; box-shadow:0 4px 8px rgba(15,23,42,.08);
+  }
+  .bus-line-badge.carpostal { background:var(--post-yellow); color:#111; }
+  .bus-line-badge.tug { background:#E30613; color:white; }
+  .boat-line-badge { background:var(--cgn-blue); color:white; min-width:42px; font-size:15px; }
+  .bus-dest,.boat-dest { font-size:20px; font-weight:700; padding-left:6px; padding-right:40px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .bus-time,.boat-time { font-size:21px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .bus-in,.boat-in { font-size:18px; font-weight:900; color:#98A2B3; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .bus-in.soon,.boat-in.soon { color:#FF1744; } .bus-in.now,.boat-in.now { color:#FF3D00; }
+
+  .alerts-scroll {
+    flex:1; overflow:hidden; display:flex; flex-direction:row; align-items:stretch; gap:14px;
+    padding:10px 24px 18px 24px;
+  }
+  .no-alerts { width:100%; display:flex; align-items:center; justify-content:center; font-size:18px; color:#98A2B3; font-style:italic; background:white; border-radius:14px; }
+  .alert-item {
+    flex:1; min-width:0; display:flex; align-items:flex-start; gap:12px;
+    padding:16px 18px; border-radius:14px; background:rgba(255,255,255,.86);
+    border:1px solid rgba(255,168,45,.28); box-shadow:0 3px 10px rgba(15,23,42,.04);
+  }
+  .alert-item.alert-warning { border-left:5px solid var(--orange); }
+  .alert-item.alert-critical { border-left:5px solid #F44336; background:#FFF3F2; }
+  .alert-item.alert-info { border-left:5px solid #2196F3; background:#F1F8FF; }
+  .alert-icon-c { font-size:23px; flex-shrink:0; margin-top:-1px; }
+  .alert-head-c { font-size:17px; font-weight:900; line-height:1.25; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .alert-desc-c { font-size:14px; color:#374151; margin-top:5px; line-height:1.25; max-height:54px; overflow:hidden; }
 
 
-.map-label { background:white; border:2px solid #333; border-radius:4px; padding:2px 6px; font-size:11px; font-weight:700; white-space:nowrap; box-shadow:0 1px 4px rgba(0,0,0,.3); }
-.map-label.train { border-color:var(--sbb-red); color:var(--sbb-red); }
-.map-label.bus { border-color:var(--post-yellow); background:var(--post-yellow); color:#1a1a1a; }
-.map-label.boat { border-color:var(--cgn-blue); color:var(--cgn-blue); }
-.map-label.office { border-color:#555; color:#555; }
+  .footer { flex-shrink:0; height:34px; padding:0 24px; display:flex; justify-content:space-between; align-items:center; font-size:12px; color:#98A2B3; border-top:1px solid #EDF0F4; background:#fff; font-weight:600; }
+
+  .loading-msg { padding:18px; text-align:center; color:#98A2B3; font-size:14px; font-weight:700; }
+  .spinner { display:inline-block; width:14px; height:14px; border:2px solid #D0D5DD; border-top-color:var(--sbb-red); border-radius:50%; animation:spin .8s linear infinite; vertical-align:middle; margin-right:7px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+
+  .map-label { background:white; border:2px solid #333; border-radius:4px; padding:2px 6px; font-size:11px; font-weight:700; white-space:nowrap; box-shadow:0 1px 4px rgba(0,0,0,.3); }
+  .map-label.train { border-color:var(--sbb-red); color:var(--sbb-red); }
+  .map-label.bus { border-color:var(--post-yellow); background:var(--post-yellow); color:#1a1a1a; }
+  .map-label.boat { border-color:var(--cgn-blue); color:var(--cgn-blue); }
+  .map-label.office { border-color:#555; color:#555; }
 </style>
 </head>
 <body>
 <div class="layout">
-<header class="top-header">
-<div class="brand-zone">
-<div class="station-cluster">
-<div style="display:flex;align-items:center;gap:20px;">
-<div style="font-size:30px;font-weight:700;letter-spacing:-.2px;color:#1a1a1a;">Public Transport</div>
-<div style="width:1px;height:28px;background:#D4DAE3;"></div>
-<div class="station-name">Gland</div>
+  <header class="top-header">
+    <div class="brand-zone">
+      <div class="station-cluster">
+        <div style="display:flex;align-items:center;gap:20px;">
+          <div style="font-size:30px;font-weight:700;letter-spacing:-.2px;color:#1a1a1a;">Public Transport</div>
+          <div style="width:1px;height:28px;background:#D4DAE3;"></div>
+          <div class="station-name">Gland</div>
 
-</div>
-</div>
-</div>
-<div class="clock-wrap" style="flex-direction:row;align-items:center;gap:20px;">
-<div class="date-str" id="dateStr" style="font-size:22px;color:#4a5568;font-weight:700;white-space:nowrap;">--</div>
-<div style="width:1px;height:28px;background:#D4DAE3;"></div>
-<div class="clock" id="clock">--:--:--</div>
-</div>
-</header>
+        </div>
+      </div>
+    </div>
+    <div class="clock-wrap" style="flex-direction:row;align-items:center;gap:20px;">
+      <div class="date-str" id="dateStr" style="font-size:22px;color:#4a5568;font-weight:700;white-space:nowrap;">--</div>
+      <div style="width:1px;height:28px;background:#D4DAE3;"></div>
+      <div class="clock" id="clock">--:--:--</div>
+    </div>
+  </header>
 
-<section class="panel panel-a">
-<div class="panel-header train">
-<div class="panel-header-left">
-<img src="sbb_logo.jpeg" style="height:30px;width:auto;" alt="SBB CFF FFS">
-<div style="width:1px;height:28px;background:#D4DAE3;margin:0 4px;"></div>
-<div class="panel-title">Train Station</div>
-</div>
-</div>
-<div class="col-headers-train">
-<span>Line</span><span>Destination</span><span>Dep.</span><span>In</span><span>Status</span><span style="text-align:center">Track</span>
-</div>
-<div class="trains-list" id="trainsList"><div class="loading-msg"><span class="spinner"></span>Loading departures…</div></div>
-<div class="footer"><span><span class="live-dot"></span> <span id="lastUpdateTrain">Updating…</span></span><span>transport.opendata.ch</span></div>
-</section>
+  <section class="panel panel-a">
+    <div class="panel-header train">
+      <div class="panel-header-left">
+        <img src="sbb_logo.jpeg" style="height:30px;width:auto;" alt="SBB CFF FFS">
+        <div style="width:1px;height:28px;background:#D4DAE3;margin:0 4px;"></div>
+        <div class="panel-title">Train Station</div>
+      </div>
+    </div>
+    <div class="col-headers-train">
+      <span>Line</span><span>Destination</span><span>Dep.</span><span>In</span><span>Status</span><span style="text-align:center">Track</span>
+    </div>
+    <div class="trains-list" id="trainsList"><div class="loading-msg"><span class="spinner"></span>Loading departures…</div></div>
+    <div class="footer"><span><span class="live-dot"></span> <span id="lastUpdateTrain">Updating…</span></span><span>transport.opendata.ch</span></div>
+  </section>
 
-<main class="right-stack">
-<div class="row-top-right">
-<section class="panel panel-b">
-<div class="panel-header bus">
-<div class="panel-header-left">
-<img src="carpostal_logo.jpg" style="height:36px;width:auto;" alt="CarPostal">
-<div><div class="panel-title dark">Gland Gare Nord &amp; Sud</div></div>
-</div>
+  <main class="right-stack">
+    <div class="row-top-right">
+      <section class="panel panel-b">
+        <div class="panel-header bus">
+          <div class="panel-header-left">
+            <img src="carpostal_logo.jpg" style="height:36px;width:auto;" alt="CarPostal">
+            <div><div class="panel-title dark">Gland Gare Nord &amp; Sud</div></div>
+          </div>
+          
+        </div>
+        <div class="col-headers-bus"><span>Line</span><span>Destination</span><span>Dep.</span><span>In</span><span>Status</span><span></span></div>
+        <div class="bus-list" id="busList"><div class="loading-msg"><span class="spinner"></span>Loading…</div></div>
+      </section>
 
-</div>
-<div class="col-headers-bus"><span>Line</span><span>Destination</span><span>Dep.</span><span>In</span><span>Status</span><span></span></div>
-<div class="bus-list" id="busList"><div class="loading-msg"><span class="spinner"></span>Loading…</div></div>
-</section>
+      <section class="panel panel-c">
+        <div class="panel-header boat">
+          <div class="panel-header-left">
+            <img src="cgn_logo.png" style="height:27px;width:auto;" alt="CGN">
+            <div><div class="panel-title">Nyon Port</div><div class="panel-subtitle">Lac Léman departures</div></div>
+          </div>
+          
+        </div>
+        <div class="col-headers-boat"><span>Line</span><span>Destination</span><span>Dep.</span><span>In</span><span>Status</span><span></span></div>
+        <div class="boats-list" id="boatsList"><div class="loading-msg"><span class="spinner"></span>Loading…</div></div>
+      </section>
+    </div>
 
-<section class="panel panel-c">
-<div class="panel-header boat">
-<div class="panel-header-left">
-<img src="cgn_logo.png" style="height:27px;width:auto;" alt="CGN">
-<div><div class="panel-title">Nyon Port</div><div class="panel-subtitle">Lac Léman departures</div></div>
-</div>
+    <section class="panel panel-d">
+      <div id="map"></div>
+    </section>
+  </main>
 
-</div>
-<div class="col-headers-boat"><span>Line</span><span>Destination</span><span>Dep.</span><span>In</span><span>Status</span><span></span></div>
-<div class="boats-list" id="boatsList"><div class="loading-msg"><span class="spinner"></span>Loading…</div></div>
-</section>
-</div>
-
-<section class="panel panel-d">
-<div id="map"></div>
-</section>
-</main>
-
-<section class="panel panel-e">
-<div class="panel-header alerts">
-<div class="panel-header-left"><div class="live-dot" id="alertDot"></div><div style="font-size:24px;">⚠️</div><div class="panel-title" style="font-size:22px;color:#111827;">Traffic Information</div></div>
-<div class="panel-update dark" id="alertUpdate">--</div>
-</div>
-<div class="alerts-scroll" id="alertsContent"><div class="no-alerts">No disruptions on the network</div></div>
-</section>
+  <section class="panel panel-e">
+    <div class="panel-header alerts">
+      <div class="panel-header-left"><div class="live-dot" id="alertDot"></div><div style="font-size:24px;">⚠️</div><div class="panel-title" style="font-size:22px;color:#111827;">Traffic Information</div></div>
+      <div class="panel-update dark" id="alertUpdate">--</div>
+    </div>
+    <div class="alerts-scroll" id="alertsContent"><div class="no-alerts">No disruptions on the network</div></div>
+  </section>
 </div>
 
 <script>
-const ICON_BASE  = 'https://icons.app.sbb.ch/icons/';
-const PICTO_BASE = 'https://icons.app.sbb.ch/picto/';
-const WORKER_URL = 'https://gland-alerts.cyrille-baptiste.workers.dev';
+  const ICON_BASE  = 'https://icons.app.sbb.ch/icons/';
+  const PICTO_BASE = 'https://icons.app.sbb.ch/picto/';
+  const WORKER_URL = 'https://gland-alerts.cyrille-baptiste.workers.dev';
 
-// ── Clock ──
-function updateClock() {
-const n=new Date(), pad=v=>String(v).padStart(2,'0');
-document.getElementById('clock').textContent=pad(n.getHours())+':'+pad(n.getMinutes())+':'+pad(n.getSeconds());
-const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-document.getElementById('dateStr').textContent=days[n.getDay()]+' '+n.getDate()+' '+months[n.getMonth()]+' '+n.getFullYear();
-}
-setInterval(updateClock,1000); updateClock();
+  // ── Clock ──
+  function updateClock() {
+    const n=new Date(), pad=v=>String(v).padStart(2,'0');
+    document.getElementById('clock').textContent=pad(n.getHours())+':'+pad(n.getMinutes())+':'+pad(n.getSeconds());
+    const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    document.getElementById('dateStr').textContent=days[n.getDay()]+' '+n.getDate()+' '+months[n.getMonth()]+' '+n.getFullYear();
+  }
+  setInterval(updateClock,1000); updateClock();
 
-// ── Helpers ──
-function tsToDate(val){
-if(val==null)return null;
-if(typeof val==='number')return new Date(val*1000);
-const d=new Date(val); return isNaN(d.getTime())?null:d;
-}
-function fmtHHMM(d){ if(!d)return'--:--'; return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
-function getSchedDate(dep){
-const s=dep.stop||{};
-return tsToDate(s.departureTimestamp)||tsToDate(dep.departureTimestamp)||tsToDate(s.departure)||tsToDate(dep.departure);
-}
-function countdown(depDate){
-if(!depDate)return{text:'—',cls:'normal'};
-const diff=Math.round((depDate-Date.now())/60000);
-if(diff<0)return{text:'Left',cls:'now'};
-if(diff===0)return{text:'Now',cls:'now'};
-if(diff<=5)return{text:diff+' min',cls:'soon'};
-return{text:diff+' min',cls:'normal'};
-}
-function delayMin(stop){ if(!stop||stop.departureDelay==null)return 0; return Math.round(stop.departureDelay/60); }
-function lineIconHtml(cat,num){
-const c=(cat||'').toLowerCase(),n=(num||'').trim();
-const primary=ICON_BASE+(n?c+'-'+n:c)+'.svg';
-const fallback=ICON_BASE+c+'.svg';
-const label=(cat+' '+(num||'')).trim();
-return '<div class="line-icon"><img src="'+primary+'" onerror="if(this.src!==\''+fallback+'\'){this.src=\''+fallback+'\';}else{this.style.display=\'none\';this.nextElementSibling.style.display=\'inline-flex\';}" alt="'+label+'"><span class="line-badge-fallback" style="display:none">'+label+'</span></div>';
-}
-function statusHtml(delay,cancelled){
-if(cancelled)return'<div class="status-cell"><img class="status-icon" src="'+ICON_BASE+'cancellation.svg"><span class="status-text cancelled">Cancelled</span></div>';
-if(delay>0)return'<div class="status-cell"><img class="status-icon" src="'+ICON_BASE+'delay.svg"><span class="status-text delayed">+'+delay+'m</span></div>';
-return'<div class="status-cell"><span class="status-text on-time">On time</span></div>';
-}
+  // ── Helpers ──
+  function tsToDate(val){
+    if(val==null)return null;
+    if(typeof val==='number')return new Date(val*1000);
+    const d=new Date(val); return isNaN(d.getTime())?null:d;
+  }
+  function fmtHHMM(d){ if(!d)return'--:--'; return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+  function getSchedDate(dep){
+    const s=dep.stop||{};
+    return tsToDate(s.departureTimestamp)||tsToDate(dep.departureTimestamp)||tsToDate(s.departure)||tsToDate(dep.departure);
+  }
+  function countdown(depDate){
+    if(!depDate)return{text:'—',cls:'normal'};
+    const diff=Math.round((depDate-Date.now())/60000);
+    if(diff<0)return{text:'Left',cls:'now'};
+    if(diff===0)return{text:'Now',cls:'now'};
+    if(diff<=5)return{text:diff+' min',cls:'soon'};
+    return{text:diff+' min',cls:'normal'};
+  }
+  function delayMin(stop){ if(!stop||stop.departureDelay==null)return 0; return Math.round(stop.departureDelay/60); }
+  function lineIconHtml(cat,num){
+    const c=(cat||'').toLowerCase(),n=(num||'').trim();
+    const primary=ICON_BASE+(n?c+'-'+n:c)+'.svg';
+    const fallback=ICON_BASE+c+'.svg';
+    const label=(cat+' '+(num||'')).trim();
+    return '<div class="line-icon"><img src="'+primary+'" onerror="if(this.src!==\''+fallback+'\'){this.src=\''+fallback+'\';}else{this.style.display=\'none\';this.nextElementSibling.style.display=\'inline-flex\';}" alt="'+label+'"><span class="line-badge-fallback" style="display:none">'+label+'</span></div>';
+  }
+  function statusHtml(delay,cancelled){
+    if(cancelled)return'<div class="status-cell"><img class="status-icon" src="'+ICON_BASE+'cancellation.svg"><span class="status-text cancelled">Cancelled</span></div>';
+    if(delay>0)return'<div class="status-cell"><img class="status-icon" src="'+ICON_BASE+'delay.svg"><span class="status-text delayed">+'+delay+'m</span></div>';
+    return'<div class="status-cell"><span class="status-text on-time">On time</span></div>';
+  }
 
-// ── Stops cache ──
-const stopsCache={};
-async function fetchStopsForDep(dep){
-const passList=dep.passList||(dep.stop&&dep.stop.passList)||null;
-if(passList&&passList.length)return passList;
-const schedDate=getSchedDate(dep); if(!schedDate)return[];
-const pad=v=>String(v).padStart(2,'0');
-const dateStr=schedDate.getFullYear()+'-'+pad(schedDate.getMonth()+1)+'-'+pad(schedDate.getDate());
-const timeStr=pad(schedDate.getHours())+pad(schedDate.getMinutes());
-try{
-const r=await fetch('https://transport.opendata.ch/v1/connections?from=Gland&to='+encodeURIComponent(dep.to)+'&date='+dateStr+'&time='+timeStr+'&limit=1');
-if(!r.ok)return[];
-const data=await r.json();
-const conn=data.connections&&data.connections[0]; if(!conn)return[];
-for(const sec of(conn.sections||[])){ if(sec.journey&&sec.journey.passList&&sec.journey.passList.length)return sec.journey.passList; }
-}catch(e){}
-return[];
-}
-function nextStopsHtml(passList){
-if(!passList||!passList.length)return'';
-const fromIdx=passList.findIndex(s=>s.station&&s.station.name&&s.station.name.toLowerCase().includes('gland'));
-const after=(fromIdx>=0?passList.slice(fromIdx+1):passList.slice(1)).filter(s=>{
-const name=(s.station&&s.station.name)||s.name||'';
-return name.trim()!==''&&name!=='?';
-});
-const shown=after.slice(0,after.length>1?Math.min(5,after.length-1):after.length);
-if(!shown.length)return'';
-return shown.map((s,i)=>{
-const name=(s.station&&s.station.name)||s.name||'';
-const sep=i<shown.length-1?'<span class="stop-sep">›</span>':'';
-return'<span class="stop-chip"><span class="stop-name">'+name+'</span></span>'+sep;
-}).join('');
-}
+  // ── Stops cache ──
+  const stopsCache={};
+  async function fetchStopsForDep(dep){
+    const passList=dep.passList||(dep.stop&&dep.stop.passList)||null;
+    if(passList&&passList.length)return passList;
+    const schedDate=getSchedDate(dep); if(!schedDate)return[];
+    const pad=v=>String(v).padStart(2,'0');
+    const dateStr=schedDate.getFullYear()+'-'+pad(schedDate.getMonth()+1)+'-'+pad(schedDate.getDate());
+    const timeStr=pad(schedDate.getHours())+pad(schedDate.getMinutes());
+    try{
+      const r=await fetch('https://transport.opendata.ch/v1/connections?from=Gland&to='+encodeURIComponent(dep.to)+'&date='+dateStr+'&time='+timeStr+'&limit=1');
+      if(!r.ok)return[];
+      const data=await r.json();
+      const conn=data.connections&&data.connections[0]; if(!conn)return[];
+      for(const sec of(conn.sections||[])){ if(sec.journey&&sec.journey.passList&&sec.journey.passList.length)return sec.journey.passList; }
+    }catch(e){}
+    return[];
+  }
+  function nextStopsHtml(passList){
+    if(!passList||!passList.length)return'';
+    const fromIdx=passList.findIndex(s=>s.station&&s.station.name&&s.station.name.toLowerCase().includes('gland'));
+    const after=(fromIdx>=0?passList.slice(fromIdx+1):passList.slice(1)).filter(s=>{
+      const name=(s.station&&s.station.name)||s.name||'';
+      return name.trim()!==''&&name!=='?';
+    });
+    const shown=after.slice(0,after.length>1?Math.min(5,after.length-1):after.length);
+    if(!shown.length)return'';
+    return shown.map((s,i)=>{
+      const name=(s.station&&s.station.name)||s.name||'';
+      const sep=i<shown.length-1?'<span class="stop-sep">›</span>':'';
+      return'<span class="stop-chip"><span class="stop-name">'+name+'</span></span>'+sep;
+    }).join('');
+  }
 
-// ═══════════ PANEL A — TRAINS ═══════════
-let trainsData=[];
-function refreshTrainCountdowns(){
-trainsData.forEach((dep,i)=>{
-const el=document.getElementById('tcd-'+i); if(!el)return;
-const cd=countdown(getSchedDate(dep)); el.textContent=cd.text; el.className='countdown '+cd.cls;
-});
-}
-setInterval(refreshTrainCountdowns,10000);
+  // ═══════════ PANEL A — TRAINS ═══════════
+  let trainsData=[];
+  function refreshTrainCountdowns(){
+    trainsData.forEach((dep,i)=>{
+      const el=document.getElementById('tcd-'+i); if(!el)return;
+      const cd=countdown(getSchedDate(dep)); el.textContent=cd.text; el.className='countdown '+cd.cls;
+    });
+  }
+  setInterval(refreshTrainCountdowns,10000);
 
-async function refreshTrains(){
-try{
-Object.keys(stopsCache).forEach(k=>delete stopsCache[k]);
-const r=await fetch('https://transport.opendata.ch/v1/stationboard?station=Gland&limit=9&type=departure');
-if(!r.ok)throw new Error('HTTP '+r.status);
-const data=await r.json();
-trainsData=data.stationboard||[];
-const list=document.getElementById('trainsList');
-if(!trainsData.length){list.innerHTML='<div class="loading-msg">No departures available.</div>';return;}
-list.innerHTML=trainsData.map((dep,i)=>{
-const cat=dep.category||'?',num=dep.number||'';
-const dest=dep.to||'—';
-const schedDate=getSchedDate(dep);
-const delay=delayMin(dep.stop);
-const cancelled=dep.stop&&dep.stop.cancelled;
-const plat=(dep.stop&&dep.stop.platform)?dep.stop.platform:'—';
-const cd=countdown(schedDate);
-const key=(dep.category||'')+(dep.number||'')+(dep.departure||'');
-const stopsHtml=stopsCache[key]?nextStopsHtml(stopsCache[key]):'';
-return'<div class="dep-block" id="tblock-'+i+'">'
-+'<div class="departure-row">'
-+'<div>'+lineIconHtml(cat,num)+'</div>'
-+'<div class="destination">'+dest+'</div>'
-+'<div class="sched-time">'+fmtHHMM(schedDate)+'</div>'
-+'<div><span class="countdown '+cd.cls+'" id="tcd-'+i+'">'+cd.text+'</span></div>'
-+'<div>'+statusHtml(delay,cancelled)+'</div>'
-+'<div class="platform">'+(plat&&plat!=='—'?'<img src="'+PICTO_BASE+'tracks-'+plat+'-fr-small.svg" style="height:22px;width:auto;" alt="'+plat+'">':plat)+'</div>'
-+'</div>'
-+'<div class="stops-inline" id="tstops-'+i+'">'+stopsHtml+'</div>'
-+'</div>';
-}).join('');
-trainsData.forEach(async(dep,i)=>{
-const key=(dep.category||'')+(dep.number||'')+(dep.departure||'');
-if(!stopsCache[key]){const stops=await fetchStopsForDep(dep);stopsCache[key]=stops;}
-const el=document.getElementById('tstops-'+i);
-if(el)el.innerHTML=nextStopsHtml(stopsCache[key]);
-});
-const n=new Date(),pad=v=>String(v).padStart(2,'0');
-document.getElementById('lastUpdateTrain').textContent='Updated '+pad(n.getHours())+':'+pad(n.getMinutes())+':'+pad(n.getSeconds());
-}catch(e){
-document.getElementById('trainsList').innerHTML='<div class="loading-msg">Cannot reach SBB API.</div>';
-}
-}
+  async function refreshTrains(){
+    try{
+      Object.keys(stopsCache).forEach(k=>delete stopsCache[k]);
+      const r=await fetch('https://transport.opendata.ch/v1/stationboard?station=Gland&limit=9&type=departure');
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      const data=await r.json();
+      trainsData=data.stationboard||[];
+      const list=document.getElementById('trainsList');
+      if(!trainsData.length){list.innerHTML='<div class="loading-msg">No departures available.</div>';return;}
+      list.innerHTML=trainsData.map((dep,i)=>{
+        const cat=dep.category||'?',num=dep.number||'';
+        const dest=dep.to||'—';
+        const schedDate=getSchedDate(dep);
+        const delay=delayMin(dep.stop);
+        const cancelled=dep.stop&&dep.stop.cancelled;
+        const plat=(dep.stop&&dep.stop.platform)?dep.stop.platform:'—';
+        const cd=countdown(schedDate);
+        const key=(dep.category||'')+(dep.number||'')+(dep.departure||'');
+        const stopsHtml=stopsCache[key]?nextStopsHtml(stopsCache[key]):'';
+        return'<div class="dep-block" id="tblock-'+i+'">'
+          +'<div class="departure-row">'
+          +'<div>'+lineIconHtml(cat,num)+'</div>'
+          +'<div class="destination">'+dest+'</div>'
+          +'<div class="sched-time">'+fmtHHMM(schedDate)+'</div>'
+          +'<div><span class="countdown '+cd.cls+'" id="tcd-'+i+'">'+cd.text+'</span></div>'
+          +'<div>'+statusHtml(delay,cancelled)+'</div>'
+          +'<div class="platform">'+(plat&&plat!=='—'?'<img src="'+PICTO_BASE+'tracks-'+plat+'-fr-small.svg" style="height:22px;width:auto;" alt="'+plat+'">':plat)+'</div>'
+          +'</div>'
+          +'<div class="stops-inline" id="tstops-'+i+'">'+stopsHtml+'</div>'
+          +'</div>';
+      }).join('');
+      trainsData.forEach(async(dep,i)=>{
+        const key=(dep.category||'')+(dep.number||'')+(dep.departure||'');
+        if(!stopsCache[key]){const stops=await fetchStopsForDep(dep);stopsCache[key]=stops;}
+        const el=document.getElementById('tstops-'+i);
+        if(el)el.innerHTML=nextStopsHtml(stopsCache[key]);
+      });
+      const n=new Date(),pad=v=>String(v).padStart(2,'0');
+      document.getElementById('lastUpdateTrain').textContent='Updated '+pad(n.getHours())+':'+pad(n.getMinutes())+':'+pad(n.getSeconds());
+    }catch(e){
+      document.getElementById('trainsList').innerHTML='<div class="loading-msg">Cannot reach SBB API.</div>';
+    }
+  }
 
-// ═══════════ PANEL B — BUS ═══════════
-const BUS_LINES=['811','830','831','835','836'];
-const BUS_STATIONS=['Gland, gare nord','Gland, gare sud','Gland, gare'];
+  // ═══════════ PANEL B — BUS ═══════════
+  const BUS_LINES=['811','830','831','835','836'];
+  const BUS_STATIONS=['Gland, gare nord','Gland, gare sud','Gland, gare'];
 
-async function refreshBuses(){
-const list=document.getElementById('busList');
-try{
-const results=await Promise.allSettled(
-BUS_STATIONS.map(s=>fetch('https://transport.opendata.ch/v1/stationboard?station='+encodeURIComponent(s)+'&limit=20&type=departure').then(r=>r.ok?r.json():null))
-);
-let allDeps=[];
-for(const res of results){if(res.status==='fulfilled'&&res.value)allDeps=allDeps.concat(res.value.stationboard||[]);}
-const filtered=allDeps.filter(dep=>{const num=String(dep.number||dep.name||'').replace(/\D/g,'');return BUS_LINES.includes(num);});
-const seen=new Set();
-const unique=filtered.filter(dep=>{
-const key=(dep.number||'')+(dep.to||'')+(dep.departure||'');
-if(seen.has(key))return false;seen.add(key);return true;
-}).sort((a,b)=>((getSchedDate(a)||0)-(getSchedDate(b)||0)));
-const now=Date.now();
-const soon=unique.filter(dep=>{
-const d=getSchedDate(dep);if(!d)return false;
-const diff=Math.round((d-now)/60000);return diff>=-1&&diff<=180;
-}).slice(0,8);
-if(!soon.length){list.innerHTML='<div class="loading-msg" style="color:#aaa;">No buses found.</div>';return;}
-const busIcon='<img src="'+PICTO_BASE+'bus-right.svg" style="height:16px;width:auto;" alt="bus">';
-list.innerHTML=soon.map(dep=>{
-const num=String(dep.number||dep.name||'').replace(/\D/g,'');
-const dest=dep.to||'—';
-const cd=countdown(getSchedDate(dep));
-const badgeCls=num==='831'?'tug':'carpostal';
-return'<div class="bus-row">'
-+'<div class="bus-icon-cell" style="gap:6px;">'+busIcon+'<span class="bus-line-badge '+badgeCls+'">'+num+'</span></div>'
-+'<div class="bus-dest">'+dest+'</div>'
-+'<div class="bus-time">'+fmtHHMM(getSchedDate(dep))+'</div>'
-+'<div class="bus-in '+cd.cls+'">'+cd.text+'</div>'
-+'<div>'+statusHtml(delayMin(dep.stop),dep.stop&&dep.stop.cancelled)+'</div>'
-+'</div>';
-}).join('');
-const n=new Date(),pad=v=>String(v).padStart(2,'0');
-// busUpdate removed
-}catch(e){list.innerHTML='<div class="loading-msg">Cannot reach bus API.</div>';}
-}
+  async function refreshBuses(){
+    const list=document.getElementById('busList');
+    try{
+      const results=await Promise.allSettled(
+        BUS_STATIONS.map(s=>fetch('https://transport.opendata.ch/v1/stationboard?station='+encodeURIComponent(s)+'&limit=20&type=departure').then(r=>r.ok?r.json():null))
+      );
+      let allDeps=[];
+      for(const res of results){if(res.status==='fulfilled'&&res.value)allDeps=allDeps.concat(res.value.stationboard||[]);}
+      const filtered=allDeps.filter(dep=>{const num=String(dep.number||dep.name||'').replace(/\D/g,'');return BUS_LINES.includes(num);});
+      const seen=new Set();
+      const unique=filtered.filter(dep=>{
+        const key=(dep.number||'')+(dep.to||'')+(dep.departure||'');
+        if(seen.has(key))return false;seen.add(key);return true;
+      }).sort((a,b)=>((getSchedDate(a)||0)-(getSchedDate(b)||0)));
+      const now=Date.now();
+      const soon=unique.filter(dep=>{
+        const d=getSchedDate(dep);if(!d)return false;
+        const diff=Math.round((d-now)/60000);return diff>=-1&&diff<=180;
+      }).slice(0,8);
+      if(!soon.length){list.innerHTML='<div class="loading-msg" style="color:#aaa;">No buses found.</div>';return;}
+      const busIcon='<img src="'+PICTO_BASE+'bus-right.svg" style="height:16px;width:auto;" alt="bus">';
+      list.innerHTML=soon.map(dep=>{
+        const num=String(dep.number||dep.name||'').replace(/\D/g,'');
+        const dest=dep.to||'—';
+        const cd=countdown(getSchedDate(dep));
+        const badgeCls=num==='831'?'tug':'carpostal';
+        return'<div class="bus-row">'
+          +'<div class="bus-icon-cell" style="gap:6px;">'+busIcon+'<span class="bus-line-badge '+badgeCls+'">'+num+'</span></div>'
+          +'<div class="bus-dest">'+dest+'</div>'
+          +'<div class="bus-time">'+fmtHHMM(getSchedDate(dep))+'</div>'
+          +'<div class="bus-in '+cd.cls+'">'+cd.text+'</div>'
+          +'<div>'+statusHtml(delayMin(dep.stop),dep.stop&&dep.stop.cancelled)+'</div>'
+          +'</div>';
+      }).join('');
+      const n=new Date(),pad=v=>String(v).padStart(2,'0');
+      // busUpdate removed
+    }catch(e){list.innerHTML='<div class="loading-msg">Cannot reach bus API.</div>';}
+  }
 
-// ═══════════ PANEL C — BATEAUX CGN ═══════════
-const CGN_STATION_NAMES=['Nyon (Lac)','Nyon, Lac','Nyon lac','Nyon, débarcadère','Nyon, CGN'];
+  // ═══════════ PANEL C — BATEAUX CGN ═══════════
+  const CGN_STATION_NAMES=['Nyon (Lac)','Nyon, Lac','Nyon lac','Nyon, débarcadère','Nyon, CGN'];
 
-async function refreshBoats(){
-const list=document.getElementById('boatsList');
-try{
-let boats=[];
-for(const name of CGN_STATION_NAMES){
-try{
-const r=await fetch('https://transport.opendata.ch/v1/stationboard?station='+encodeURIComponent(name)+'&limit=6&type=departure');
-if(!r.ok)continue;
-const data=await r.json();
-if((data.stationboard||[]).length>0){boats=data.stationboard.slice(0,6);break;}
-}catch(e){continue;}
-}
-if(!boats.length){list.innerHTML='<div class="loading-msg" style="color:#aaa;">No CGN departures.</div>';return;}
-const now=Date.now();
-const filtered=boats.filter(dep=>{
-const d=getSchedDate(dep);if(!d)return false;
-const diff=Math.round((d-now)/60000);return diff>=-2&&diff<=240;
-});
-if(!filtered.length){list.innerHTML='<div class="loading-msg" style="color:#aaa;">No more today.</div>';return;}
-const boatIcon='<img src="'+PICTO_BASE+'jetty-right.svg" style="height:16px;width:auto;" alt="boat">';
-list.innerHTML=filtered.map(dep=>{
-const dest=dep.to||'—';
-const cd=countdown(getSchedDate(dep));
-const lineNum=(dep.number||dep.name||dep.category||'').replace(/^0+/,'');
-const lineBadge=lineNum?'<span class="boat-line-badge">'+lineNum+'</span>':'';
-return'<div class="boat-row">'
-+'<div class="boat-icon-cell" style="gap:6px;">'+boatIcon+lineBadge+'</div>'
-+'<div class="boat-dest">'+dest+'</div>'
-+'<div class="boat-time">'+fmtHHMM(getSchedDate(dep))+'</div>'
-+'<div class="boat-in '+cd.cls+'">'+cd.text+'</div>'
-+'<div>'+statusHtml(delayMin(dep.stop),dep.stop&&dep.stop.cancelled)+'</div>'
-+'</div>';
-}).join('');
-const n=new Date(),pad=v=>String(v).padStart(2,'0');
-// boatUpdate removed
-}catch(e){list.innerHTML='<div class="loading-msg">Cannot reach CGN API.</div>';}
-}
+  async function refreshBoats(){
+    const list=document.getElementById('boatsList');
+    try{
+      let boats=[];
+      for(const name of CGN_STATION_NAMES){
+        try{
+          const r=await fetch('https://transport.opendata.ch/v1/stationboard?station='+encodeURIComponent(name)+'&limit=6&type=departure');
+          if(!r.ok)continue;
+          const data=await r.json();
+          if((data.stationboard||[]).length>0){boats=data.stationboard.slice(0,6);break;}
+        }catch(e){continue;}
+      }
+      if(!boats.length){list.innerHTML='<div class="loading-msg" style="color:#aaa;">No CGN departures.</div>';return;}
+      const now=Date.now();
+      const filtered=boats.filter(dep=>{
+        const d=getSchedDate(dep);if(!d)return false;
+        const diff=Math.round((d-now)/60000);return diff>=-2&&diff<=240;
+      });
+      if(!filtered.length){list.innerHTML='<div class="loading-msg" style="color:#aaa;">No more today.</div>';return;}
+      const boatIcon='<img src="'+PICTO_BASE+'jetty-right.svg" style="height:16px;width:auto;" alt="boat">';
+      list.innerHTML=filtered.map(dep=>{
+        const dest=dep.to||'—';
+        const cd=countdown(getSchedDate(dep));
+        const lineNum=(dep.number||dep.name||dep.category||'').replace(/^0+/,'');
+        const lineBadge=lineNum?'<span class="boat-line-badge">'+lineNum+'</span>':'';
+        return'<div class="boat-row">'
+          +'<div class="boat-icon-cell" style="gap:6px;">'+boatIcon+lineBadge+'</div>'
+          +'<div class="boat-dest">'+dest+'</div>'
+          +'<div class="boat-time">'+fmtHHMM(getSchedDate(dep))+'</div>'
+          +'<div class="boat-in '+cd.cls+'">'+cd.text+'</div>'
+          +'<div>'+statusHtml(delayMin(dep.stop),dep.stop&&dep.stop.cancelled)+'</div>'
+          +'</div>';
+      }).join('');
+      const n=new Date(),pad=v=>String(v).padStart(2,'0');
+      // boatUpdate removed
+    }catch(e){list.innerHTML='<div class="loading-msg">Cannot reach CGN API.</div>';}
+  }
 
-// ═══════════ PANEL E — ALERTS ═══════════
-async function refreshAlerts(){
-try{
-const r=await fetch(WORKER_URL,{cache:'no-store'});if(!r.ok)return;
-const data=await r.json();
-const alerts=(data.alerts||[]).filter(a=>a.header&&a.header.trim()!=='');
-const content=document.getElementById('alertsContent');
-const dot=document.getElementById('alertDot');
-const upd=document.getElementById('alertUpdate');
-const n=new Date(),pad=v=>String(v).padStart(2,'0');
-upd.textContent=pad(n.getHours())+':'+pad(n.getMinutes());
-if(!alerts.length){
-dot.style.background='#4CAF50';
-content.innerHTML='<div class="no-alerts">No disruptions on the network</div>';
-return;
-}
-dot.style.background='#FF5722';
-content.innerHTML=alerts.slice(0,3).map(a=>{
-const cause=a.cause||'';
-const isCritical=['TECHNICAL_PROBLEM','ACCIDENT'].includes(cause);
-const isInfo=['CONSTRUCTION','MAINTENANCE'].includes(cause);
-const cls=isCritical?'alert-critical':isInfo?'alert-info':'alert-warning';
-const icon=isCritical?'🔴':isInfo?'🔧':'⚠️';
-const desc=(a.description||'').replace(/<[^>]+>/g,'');
-const shortDesc=desc.length>145?desc.substring(0,145)+'…':desc;
-return'<div class="alert-item '+cls+'"><div class="alert-icon-c">'+icon+'</div>'
-+'<div><div class="alert-head-c">'+a.header+'</div>'
-+(shortDesc?'<div class="alert-desc-c">'+shortDesc+'</div>':'')
-+'</div></div>';
-      }).join('') + '<div class="alert-qr"><div class="alert-qr-box">▦</div><div class="alert-qr-text">Plus d’informations<br><span>sur sbb.ch</span></div></div>';
+  // ═══════════ PANEL E — ALERTS ═══════════
+  async function refreshAlerts(){
+    try{
+      const r=await fetch(WORKER_URL,{cache:'no-store'});if(!r.ok)return;
+      const data=await r.json();
+      const alerts=(data.alerts||[]).filter(a=>a.header&&a.header.trim()!=='');
+      const content=document.getElementById('alertsContent');
+      const dot=document.getElementById('alertDot');
+      const upd=document.getElementById('alertUpdate');
+      const n=new Date(),pad=v=>String(v).padStart(2,'0');
+      upd.textContent=pad(n.getHours())+':'+pad(n.getMinutes());
+      if(!alerts.length){
+        dot.style.background='#4CAF50';
+        content.innerHTML='<div class="no-alerts">No disruptions on the network</div>';
+        return;
+      }
+      dot.style.background='#FF5722';
+      content.innerHTML=alerts.slice(0,3).map(a=>{
+        const cause=a.cause||'';
+        const isCritical=['TECHNICAL_PROBLEM','ACCIDENT'].includes(cause);
+        const isInfo=['CONSTRUCTION','MAINTENANCE'].includes(cause);
+        const cls=isCritical?'alert-critical':isInfo?'alert-info':'alert-warning';
+        const icon=isCritical?'🔴':isInfo?'🔧':'⚠️';
+        const desc=(a.description||'').replace(/<[^>]+>/g,'');
+        const shortDesc=desc.length>145?desc.substring(0,145)+'…':desc;
+        return'<div class="alert-item '+cls+'"><div class="alert-icon-c">'+icon+'</div>'
+          +'<div><div class="alert-head-c">'+a.header+'</div>'
+          +(shortDesc?'<div class="alert-desc-c">'+shortDesc+'</div>':'')
+          +'</div></div>';
       }).join('')';
-}catch(e){}
-}
+    }catch(e){}
+  }
 
-// ═══════════ PANEL D — MAP (Leaflet + OpenStreetMap) ═══════════
-function initMap(){
-// Use CartoDB Positron — cleaner, less cluttered than OSM default
-const map = L.map('map', {
-center: [46.4190, 6.2695],
-zoom: 17,
-zoomControl: false,
-attributionControl: true,
-dragging: false,
-scrollWheelZoom: false,
-doubleClickZoom: false,
-touchZoom: false,
-});
+  // ═══════════ PANEL D — MAP (Leaflet + OpenStreetMap) ═══════════
+  function initMap(){
+    // Use CartoDB Positron — cleaner, less cluttered than OSM default
+    const map = L.map('map', {
+      center: [46.4190, 6.2695],
+      zoom: 17,
+      zoomControl: false,
+      attributionControl: true,
+      dragging: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      touchZoom: false,
+    });
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-attribution: '© OpenStreetMap contributors',
-maxZoom: 19,
-}).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 19,
+    }).addTo(map);
 
-// ── Icon factory ──
-function makeMarker(color, textColor, label, sublabel) {
-const html =
-'<div style="'
-+'background:'+color+';'
-+'color:'+textColor+';'
-+'border-radius:8px;'
-+'padding:5px 10px;'
-+'font-size:12px;'
-+'font-weight:700;'
-+'white-space:nowrap;'
-+'box-shadow:0 2px 8px rgba(0,0,0,0.25);'
-+'border:2px solid rgba(255,255,255,0.8);'
-+'line-height:1.3;'
-+'text-align:center;'
-+'">'
-+label
-+(sublabel?'<br><span style="font-size:10px;font-weight:400;opacity:0.85;">'+sublabel+'</span>':'')
-+'</div>';
-return L.divIcon({
-className: '',
-html: html,
-iconAnchor: [0, 0],
-popupAnchor: [0, -10],
-});
-}
+    // ── Icon factory ──
+    function makeMarker(color, textColor, label, sublabel) {
+      const html =
+        '<div style="'
+        +'background:'+color+';'
+        +'color:'+textColor+';'
+        +'border-radius:8px;'
+        +'padding:5px 10px;'
+        +'font-size:12px;'
+        +'font-weight:700;'
+        +'white-space:nowrap;'
+        +'box-shadow:0 2px 8px rgba(0,0,0,0.25);'
+        +'border:2px solid rgba(255,255,255,0.8);'
+        +'line-height:1.3;'
+        +'text-align:center;'
+        +'">'
+        +label
+        +(sublabel?'<br><span style="font-size:10px;font-weight:400;opacity:0.85;">'+sublabel+'</span>':'')
+        +'</div>';
+      return L.divIcon({
+        className: '',
+        html: html,
+        iconAnchor: [0, 0],
+        popupAnchor: [0, -10],
+      });
+    }
 
 
-}
+  }
 
-// ═══════════ Init ═══════════
-refreshTrains();
-refreshBuses();
-refreshBoats();
-refreshAlerts();
-initMap();
+  // ═══════════ Init ═══════════
+  refreshTrains();
+  refreshBuses();
+  refreshBoats();
+  refreshAlerts();
+  initMap();
 
-setInterval(refreshTrains,  30000);
-setInterval(refreshBuses,   30000);
-setInterval(refreshBoats,   30000);
-setInterval(refreshAlerts, 120000);
+  setInterval(refreshTrains,  30000);
+  setInterval(refreshBuses,   30000);
+  setInterval(refreshBoats,   30000);
+  setInterval(refreshAlerts, 120000);
 </script>
 </body>
 </html>
