@@ -38,7 +38,7 @@
     width:1920px; height:1080px;
     padding:14px 18px 14px 18px;
     display:grid;
-    grid-template-columns: 930px 1fr;
+    grid-template-columns: 800px 1fr;
     grid-template-rows: 72px 1fr 152px;
     gap:16px;
   }
@@ -109,7 +109,7 @@
 
   .col-headers-train {
     flex-shrink:0; height:32px; padding:0 24px;
-    display:grid; grid-template-columns:112px 1fr 106px 88px 118px 68px; align-items:center;
+    display:grid; grid-template-columns:100px 1fr 96px 80px 108px 62px; align-items:center;
     background:var(--sbb-red); color:white; font-size:15px; font-weight:900;
   }
 
@@ -122,17 +122,17 @@
   }
 
 
-  .col-headers-bus { grid-template-columns:60px 1fr 90px 80px 100px; column-gap:8px; }
-.col-headers-boat { grid-template-columns:60px 1fr 90px 80px 100px; column-gap:8px; }
+  .col-headers-bus { grid-template-columns:62px 1fr 80px 64px 90px; column-gap:8px; }
+.col-headers-boat { grid-template-columns:62px 1fr 80px 64px 90px; column-gap:8px; }
 
   .trains-list { flex:1; overflow:hidden; background:#fff; }
   .dep-block { border-bottom:1px solid #EDF0F4; }
   .dep-block:last-child { border-bottom:none; }
   .departure-row {
-    min-height:62px; display:grid; grid-template-columns:112px 1fr 106px 88px 118px 68px;
+    min-height:62px; display:grid; grid-template-columns:100px 1fr 96px 80px 108px 62px;
     align-items:center; padding:10px 24px 2px 24px;
   }
-  .stops-inline { display:flex; align-items:center; overflow:hidden; padding:0 24px 10px 112px; min-height:22px; }
+  .stops-inline { display:flex; align-items:center; overflow:hidden; padding:0 24px 10px 100px; min-height:22px; }
   .stop-chip { display:flex; align-items:center; gap:2px; white-space:nowrap; }
   .stop-name { font-size:14px; line-height:18px; color:#667085; font-weight:600; }
   .stop-sep { color:#B5BDCA; font-size:15px; margin:0 7px; }
@@ -156,8 +156,8 @@
     min-height:58px; display:grid; align-items:center; padding:8px 22px; border-bottom:1px solid #F0F2F5;
   }
 
-  .bus-row { grid-template-columns:60px 1fr 90px 80px 100px; column-gap:8px; }
-.boat-row { grid-template-columns:60px 1fr 90px 80px 100px; column-gap:8px; }
+  .bus-row { grid-template-columns:62px 1fr 80px 64px 90px; column-gap:8px; }
+.boat-row { grid-template-columns:62px 1fr 80px 64px 90px; column-gap:8px; }
   
   .bus-row:last-child,.boat-row:last-child { border-bottom:none; }
   .bus-icon-cell,.boat-icon-cell { display:flex; align-items:center; justify-content:flex-start; }
@@ -169,9 +169,9 @@
   .bus-line-badge.carpostal { background:var(--post-yellow); color:#111; }
   .bus-line-badge.tug { background:#E30613; color:white; }
   .boat-line-badge { background:var(--cgn-blue); color:white; min-width:42px; font-size:15px; }
-  .bus-dest,.boat-dest { font-size:20px; font-weight:700; padding-left:0px; padding-right:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .bus-time,.boat-time { font-size:21px; font-weight:600; font-variant-numeric:tabular-nums; }
-  .bus-in,.boat-in { font-size:18px; font-weight:900; color:#98A2B3; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .bus-dest,.boat-dest { font-size:18px; font-weight:700; padding-left:0px; padding-right:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+  .bus-time,.boat-time { font-size:18px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .bus-in,.boat-in { font-size:15px; font-weight:900; color:#98A2B3; font-variant-numeric:tabular-nums; white-space:nowrap; }
   .bus-in.soon,.boat-in.soon { color:#FF1744; } .bus-in.now,.boat-in.now { color:#FF3D00; }
 
   .alerts-scroll {
@@ -253,7 +253,7 @@
           </div>
           
         </div>
-        <div class="col-headers-bus"><span>Line</span><span>Destination</span><span>Dep.</span><span>In</span><span>Status</span><span></span></div>
+        <div class="col-headers-bus"><span>Line</span><span>Destination</span><span>Dep.</span><span>In</span><span>Status</span></div>
         <div class="bus-list" id="busList"><div class="loading-msg"><span class="spinner"></span>Loading…</div></div>
       </section>
 
@@ -265,7 +265,7 @@
           </div>
           
         </div>
-        <div class="col-headers-boat"><span>Line</span><span>Destination</span><span>Dep.</span><span>In</span><span>Status</span><span></span></div>
+        <div class="col-headers-boat"><span>Line</span><span>Destination</span><span>Dep.</span><span>In</span><span>Status</span></div>
         <div class="boats-list" id="boatsList"><div class="loading-msg"><span class="spinner"></span>Loading…</div></div>
       </section>
     </div>
