@@ -117,7 +117,7 @@
   .col-headers-bus, .col-headers-boat {
     flex-shrink:0; height:34px; padding:0 22px;
     display:grid; align-items:center; border-bottom:1px solid var(--line);
-    background:#FAFBFC; font-size:13px; font-weight:800; color:#111827;
+    background:#FAFBFC; font-size:15px; font-weight:900; color:#111827;
     column-gap:8px;
   }
   .col-headers-bus { grid-template-columns:80px 1fr 110px 88px 118px 68px; column-gap:8px; }
@@ -509,7 +509,7 @@
       const dot=document.getElementById('alertDot');
       const upd=document.getElementById('alertUpdate');
       const n=new Date(),pad=v=>String(v).padStart(2,'0');
-      upd.textContent=pad(n.getHours())+':'+pad(n.getMinutes());
+      upd.textContent='Last update: '+pad(n.getHours())+':'+pad(n.getMinutes());
       if(!alerts.length){
         dot.style.background='#4CAF50';
         content.innerHTML='<div class="no-alerts">No disruptions on the network</div>';
