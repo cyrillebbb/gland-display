@@ -57,7 +57,7 @@
   .sbb-logo-img { height:34px; width:auto; display:block; }
   .header-divider { width:2px; height:36px; background:#D4DAE3; }
   .station-cluster { display:flex; align-items:center; gap:16px; }
-  .station-name { font-size:36px; line-height:34px; font-weight:900; letter-spacing:-.7px; }
+  .station-name { font-size:48px; line-height:46px; font-weight:900; letter-spacing:-.7px; }
   .date-str { font-size:14px; color:var(--muted); margin-top:5px; font-weight:600; }
   .clock-wrap { display:flex; align-items:center; gap:16px; }
   .clock-icon { font-size:30px; color:#778092; transform:translateY(1px); }
@@ -66,7 +66,7 @@
 
   .panel { background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; min-width:0; }
   .panel-a { grid-column:1; grid-row:2; display:flex; flex-direction:column; }
-  .right-stack { grid-column:2; grid-row:2; display:grid; grid-template-rows: 272px 1fr; gap:16px; min-height:0; }
+  .right-stack { grid-column:2; grid-row:2; display:grid; grid-template-rows: 1fr 1fr; gap:16px; min-height:0; }
   .row-top-right { display:grid; grid-template-columns:1fr 1fr; gap:16px; min-height:0; }
   .panel-b,.panel-c { display:flex; flex-direction:column; }
   .panel-d { position:relative; overflow:hidden; border-radius:var(--radius); }
@@ -141,7 +141,7 @@
   .destination { font-size:20px; font-weight:700; letter-spacing:-.2px; padding-left:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .sched-time { font-size:25px; font-weight:600; font-variant-numeric:tabular-nums; }
   .countdown { font-size:18px; font-weight:900; font-variant-numeric:tabular-nums; }
-  .countdown.normal { color:#98A2B3; } .countdown.soon { color:var(--orange); } .countdown.now { color:#FF3D00; }
+  .countdown.normal { color:#4B5563; } .countdown.soon { color:var(--orange); } .countdown.now { color:#FF3D00; }
   .status-cell { display:flex; align-items:center; gap:7px; }
   .status-icon { width:15px; height:15px; }
   .status-text { font-size:13px; font-weight:900; white-space:nowrap; }
@@ -171,7 +171,7 @@
   .boat-line-badge { background:var(--cgn-blue); color:white; min-width:42px; font-size:15px; }
   .bus-dest,.boat-dest { font-size:18px; font-weight:700; padding-left:0px; padding-right:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
   .bus-time,.boat-time { font-size:18px; font-weight:600; font-variant-numeric:tabular-nums; }
-  .bus-in,.boat-in { font-size:15px; font-weight:900; color:#98A2B3; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .bus-in,.boat-in { font-size:15px; font-weight:900; color:#4B5563; font-variant-numeric:tabular-nums; white-space:nowrap; }
   .bus-in.soon,.boat-in.soon { color:#FF1744; } .bus-in.now,.boat-in.now { color:#FF3D00; }
 
   .alerts-scroll {
@@ -237,7 +237,7 @@
       </div>
     </div>
     <div class="col-headers-train">
-      <span>Line</span><span>Destination</span><span>Dep.</span><span>In</span><span>Status</span><span style="text-align:center">Track</span>
+      <span>Line</span><span style="padding-left:16px;">Destination</span><span>Dep.</span><span>In</span><span>Status</span><span style="text-align:center">Track</span>
     </div>
     <div class="trains-list" id="trainsList"><div class="loading-msg"><span class="spinner"></span>Loading departures…</div></div>
     <div class="footer"><span><span class="live-dot"></span> <span id="lastUpdateTrain">Updating…</span></span><span>transport.opendata.ch</span></div>
