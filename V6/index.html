@@ -187,7 +187,7 @@
   .alert-item.alert-warning { border-left:5px solid var(--orange); }
   .alert-item.alert-critical { border-left:5px solid #F44336; background:#FFF3F2; }
   .alert-item.alert-info { border-left:5px solid #2196F3; background:#F1F8FF; }
-  .alert-icon-c { font-size:23px; flex-shrink:0; margin-top:-1px; }
+  .alert-icon-c { display:none; }
   .alert-head-c { font-size:17px; font-weight:900; line-height:1.25; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .alert-desc-c { font-size:14px; color:#374151; margin-top:5px; line-height:1.25; max-height:54px; overflow:hidden; }
 
@@ -210,18 +210,19 @@
 <body>
 <div class="layout">
   <header class="top-header">
-    <div class="brand-zone">
-      <div class="station-cluster">
-        <div style="display:flex;align-items:center;gap:20px;">
-          <div style="font-size:30px;font-weight:700;letter-spacing:-.2px;color:#1a1a1a;">Public Transport</div>
-          <div style="width:1px;height:28px;background:#D4DAE3;"></div>
-          <div class="station-name">Gland</div>
-
-        </div>
-      </div>
+    <!-- Left: SQ logo + Public Transport -->
+    <div style="display:flex;align-items:center;gap:18px;min-width:420px;">
+      <img src="logo_sq.png" style="height:36px;width:auto;" alt="Swissquote">
+      <div style="width:1px;height:36px;background:#D4DAE3;"></div>
+      <div style="font-size:28px;font-weight:700;letter-spacing:-.2px;color:#1a1a1a;">Public Transport</div>
     </div>
-    <div class="clock-wrap" style="flex-direction:row;align-items:center;gap:20px;">
-      <div class="date-str" id="dateStr" style="font-size:22px;color:#4a5568;font-weight:700;white-space:nowrap;">--</div>
+    <!-- Center: Gland (absolute) -->
+    <div style="position:absolute;left:0;right:0;display:flex;justify-content:center;align-items:center;pointer-events:none;">
+      <div class="station-name">Gland</div>
+    </div>
+    <!-- Right: date + clock -->
+    <div style="display:flex;align-items:center;gap:16px;min-width:420px;justify-content:flex-end;">
+      <div class="date-str" id="dateStr" style="font-size:20px;color:#4a5568;font-weight:700;white-space:nowrap;">--</div>
       <div style="width:1px;height:28px;background:#D4DAE3;"></div>
       <div class="clock" id="clock">--:--:--</div>
     </div>
@@ -443,14 +444,13 @@
         const diff=Math.round((d-now)/60000);return diff>=-1&&diff<=180;
       }).slice(0,8);
       if(!soon.length){list.innerHTML='<div class="loading-msg" style="color:#aaa;">No buses found.</div>';return;}
-      const busIcon='<img src="'+PICTO_BASE+'bus-right.svg" style="height:16px;width:auto;" alt="bus">';
       list.innerHTML=soon.map(dep=>{
         const num=String(dep.number||dep.name||'').replace(/\D/g,'');
         const dest=dep.to||'—';
         const cd=countdown(getSchedDate(dep));
         const badgeCls=num==='831'?'tug':'carpostal';
         return'<div class="bus-row">'
-          +'<div class="bus-icon-cell" style="gap:6px;">'+busIcon+'<span class="bus-line-badge '+badgeCls+'">'+num+'</span></div>'
+          +'<div class="bus-icon-cell"><span class="bus-line-badge '+badgeCls+'">'+num+'</span></div>'
           +'<div class="bus-dest">'+dest+'</div>'
           +'<div class="bus-time">'+fmtHHMM(getSchedDate(dep))+'</div>'
           +'<div class="bus-in '+cd.cls+'">'+cd.text+'</div>'
@@ -484,14 +484,13 @@
         const diff=Math.round((d-now)/60000);return diff>=-2&&diff<=240;
       });
       if(!filtered.length){list.innerHTML='<div class="loading-msg" style="color:#aaa;">No more today.</div>';return;}
-      const boatIcon='<img src="'+PICTO_BASE+'jetty-right.svg" style="height:16px;width:auto;" alt="boat">';
       list.innerHTML=filtered.map(dep=>{
         const dest=dep.to||'—';
         const cd=countdown(getSchedDate(dep));
         const lineNum=(dep.number||dep.name||dep.category||'').replace(/^0+/,'');
         const lineBadge=lineNum?'<span class="boat-line-badge">'+lineNum+'</span>':'';
         return'<div class="boat-row">'
-          +'<div class="boat-icon-cell" style="gap:6px;">'+boatIcon+lineBadge+'</div>'
+          +'<div class="boat-icon-cell">'+lineBadge+'</div>'
           +'<div class="boat-dest">'+dest+'</div>'
           +'<div class="boat-time">'+fmtHHMM(getSchedDate(dep))+'</div>'
           +'<div class="boat-in '+cd.cls+'">'+cd.text+'</div>'
@@ -528,7 +527,7 @@
         const icon=isCritical?'🔴':isInfo?'🔧':'⚠️';
         const desc=(a.description||'').replace(/<[^>]+>/g,'');
         const shortDesc=desc.length>145?desc.substring(0,145)+'…':desc;
-        return'<div class="alert-item '+cls+'"><div class="alert-icon-c">'+icon+'</div>'
+        return'<div class="alert-item '+cls+'">'
           +'<div><div class="alert-head-c">'+a.header+'</div>'
           +(shortDesc?'<div class="alert-desc-c">'+shortDesc+'</div>':'')
           +'</div></div>';
