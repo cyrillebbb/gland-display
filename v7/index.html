@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=1920, height=1080">
-<title>Gland - Live Transport Information</title>
+<title>Gland — Transport Display V6.1 Modern</title>
 
-
-
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <style>
   :root {
@@ -70,6 +70,7 @@
   .row-top-right { display:grid; grid-template-columns:1fr 1fr; gap:16px; min-height:0; }
   .panel-b,.panel-c { display:flex; flex-direction:column; }
   .panel-d { position:relative; overflow:hidden; border-radius:var(--radius); }
+  #map { width:100%; height:100%; border-radius:var(--radius); }
   .panel-e { grid-column:1 / 3; grid-row:3; display:flex; flex-direction:column; background:linear-gradient(180deg,#FFF7E9 0%,#FFF3DC 100%); }
 
   .main-header { display:none; }
@@ -209,19 +210,18 @@
 <body>
 <div class="layout">
   <header class="top-header">
-    <!-- Left: SQ logo + Public Transport -->
-    <div style="display:flex;align-items:center;gap:18px;min-width:420px;">
-      <img src="logo_sq.png" style="height:36px;width:auto;" alt="Swissquote">
-      <div style="width:1px;height:36px;background:#D4DAE3;"></div>
-      <div style="font-size:28px;font-weight:700;letter-spacing:-.2px;color:#1a1a1a;">Live Transport Information</div>
+    <div class="brand-zone">
+      <div class="station-cluster">
+        <div style="display:flex;align-items:center;gap:20px;">
+          <div style="font-size:30px;font-weight:700;letter-spacing:-.2px;color:#1a1a1a;">Public Transport</div>
+          <div style="width:1px;height:28px;background:#D4DAE3;"></div>
+          <div class="station-name">Gland</div>
+
+        </div>
+      </div>
     </div>
-    <!-- Center: Gland (absolute) -->
-    <div style="position:absolute;left:0;right:0;display:flex;justify-content:center;align-items:center;pointer-events:none;">
-      <div class="station-name">Gland</div>
-    </div>
-    <!-- Right: date + clock -->
-    <div style="display:flex;align-items:center;gap:16px;min-width:420px;justify-content:flex-end;">
-      <div class="date-str" id="dateStr" style="font-size:26px;color:#07101F;font-weight:700;white-space:nowrap;">--</div>
+    <div class="clock-wrap" style="flex-direction:row;align-items:center;gap:20px;">
+      <div class="date-str" id="dateStr" style="font-size:22px;color:#4a5568;font-weight:700;white-space:nowrap;">--</div>
       <div style="width:1px;height:28px;background:#D4DAE3;"></div>
       <div class="clock" id="clock">--:--:--</div>
     </div>
@@ -270,7 +270,7 @@
     </div>
 
     <section class="panel panel-d">
-      <img src="map_tp_gland.png" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);display:block;" alt="Gland Transport Map">
+      <div id="map"></div>
     </section>
   </main>
 
@@ -317,7 +317,21 @@
     if(diff<=5)return{text:diff+' min',cls:'soon'};
     return{text:diff+' min',cls:'normal'};
   }
-  function delayMin(stop){ if(!stop||stop.departureDelay==null)return 0; return Math.round(stop.departureDelay/60); }
+  function delayMin(stop){
+    if(!stop) return 0;
+    // Try departureDelay first
+    if(stop.departureDelay!=null) return Math.round(stop.departureDelay/60);
+    // Fallback: compare prognosis.departure with scheduled departure
+    if(stop.prognosis&&stop.prognosis.departure&&stop.departure){
+      const sched=new Date(stop.departure).getTime();
+      const prog=new Date(stop.prognosis.departure).getTime();
+      if(!isNaN(sched)&&!isNaN(prog)){
+        const diff=Math.round((prog-sched)/60000);
+        return diff>0?diff:0;
+      }
+    }
+    return 0;
+  }
   function lineIconHtml(cat,num){
     const c=(cat||'').toLowerCase(),n=(num||'').trim();
     const primary=ICON_BASE+(n?c+'-'+n:c)+'.svg';
@@ -378,7 +392,7 @@
   async function refreshTrains(){
     try{
       Object.keys(stopsCache).forEach(k=>delete stopsCache[k]);
-      const r=await fetch('https://transport.opendata.ch/v1/stationboard?station=Gland&limit=9&type=departure');
+      const r=await fetch('https://transport.opendata.ch/v1/stationboard?station=Gland&limit=9&type=departure',{cache:'no-store'});
       if(!r.ok)throw new Error('HTTP '+r.status);
       const data=await r.json();
       trainsData=data.stationboard||[];
@@ -389,7 +403,7 @@
         const dest=dep.to||'—';
         const schedDate=getSchedDate(dep);
         const delay=delayMin(dep.stop);
-        const cancelled=dep.stop&&dep.stop.cancelled;
+        const cancelled=(dep.stop&&dep.stop.cancelled)||(dep.stop&&dep.stop.prognosis&&dep.stop.prognosis.departure==='null');
         const plat=(dep.stop&&dep.stop.platform)?dep.stop.platform:'—';
         const cd=countdown(schedDate);
         const key=(dep.category||'')+(dep.number||'')+(dep.departure||'');
@@ -538,7 +552,51 @@
 
   // ═══════════ PANEL D — MAP (Leaflet + OpenStreetMap) ═══════════
   function initMap(){
-  
+    // Use CartoDB Positron — cleaner, less cluttered than OSM default
+    const map = L.map('map', {
+      center: [46.4190, 6.2695],
+      zoom: 17,
+      zoomControl: false,
+      attributionControl: true,
+      dragging: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      touchZoom: false,
+    });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 19,
+    }).addTo(map);
+
+    // ── Icon factory ──
+    function makeMarker(color, textColor, label, sublabel) {
+      const html =
+        '<div style="'
+        +'background:'+color+';'
+        +'color:'+textColor+';'
+        +'border-radius:8px;'
+        +'padding:5px 10px;'
+        +'font-size:12px;'
+        +'font-weight:700;'
+        +'white-space:nowrap;'
+        +'box-shadow:0 2px 8px rgba(0,0,0,0.25);'
+        +'border:2px solid rgba(255,255,255,0.8);'
+        +'line-height:1.3;'
+        +'text-align:center;'
+        +'">'
+        +label
+        +(sublabel?'<br><span style="font-size:10px;font-weight:400;opacity:0.85;">'+sublabel+'</span>':'')
+        +'</div>';
+      return L.divIcon({
+        className: '',
+        html: html,
+        iconAnchor: [0, 0],
+        popupAnchor: [0, -10],
+      });
+    }
+
+
   }
 
   // ═══════════ Init ═══════════
