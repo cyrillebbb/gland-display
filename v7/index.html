@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=1920, height=1080">
 <title>Gland — Transport Display V6.1 Modern</title>
 
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <style>
   :root {
@@ -36,7 +38,7 @@
     width:1920px; height:1080px;
     padding:14px 18px 14px 18px;
     display:grid;
-    grid-template-columns: 930px 1fr;
+    grid-template-columns: 800px 1fr;
     grid-template-rows: 72px 1fr 152px;
     gap:16px;
   }
@@ -55,7 +57,7 @@
   .sbb-logo-img { height:34px; width:auto; display:block; }
   .header-divider { width:2px; height:36px; background:#D4DAE3; }
   .station-cluster { display:flex; align-items:center; gap:16px; }
-  .station-name { font-size:36px; line-height:34px; font-weight:900; letter-spacing:-.7px; }
+  .station-name { font-size:48px; line-height:46px; font-weight:900; letter-spacing:-.7px; }
   .date-str { font-size:14px; color:var(--muted); margin-top:5px; font-weight:600; }
   .clock-wrap { display:flex; align-items:center; gap:16px; }
   .clock-icon { font-size:30px; color:#778092; transform:translateY(1px); }
@@ -64,10 +66,11 @@
 
   .panel { background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; min-width:0; }
   .panel-a { grid-column:1; grid-row:2; display:flex; flex-direction:column; }
-  .right-stack { grid-column:2; grid-row:2; display:grid; grid-template-rows: 272px 1fr; gap:16px; min-height:0; }
+  .right-stack { grid-column:2; grid-row:2; display:grid; grid-template-rows: 1fr 1fr; gap:16px; min-height:0; }
   .row-top-right { display:grid; grid-template-columns:1fr 1fr; gap:16px; min-height:0; }
   .panel-b,.panel-c { display:flex; flex-direction:column; }
   .panel-d { position:relative; overflow:hidden; border-radius:var(--radius); }
+  #map { width:100%; height:100%; border-radius:var(--radius); }
   .panel-e { grid-column:1 / 3; grid-row:3; display:flex; flex-direction:column; background:linear-gradient(180deg,#FFF7E9 0%,#FFF3DC 100%); }
 
   .main-header { display:none; }
@@ -80,7 +83,7 @@
   }
   .panel-header.bus {
     height:74px; padding:0 22px;
-    color:#111; background:linear-gradient(180deg,#FFD928 0%, var(--post-yellow) 100%);
+    color:#111; background:linear-gradient(180deg,#FFCC00 0%, var(--post-yellow) 100%);
   }
   .panel-header.boat {
     height:74px; padding:0 22px; color:#fff;
@@ -106,7 +109,7 @@
 
   .col-headers-train {
     flex-shrink:0; height:32px; padding:0 24px;
-    display:grid; grid-template-columns:112px 1fr 106px 88px 118px 68px; align-items:center;
+    display:grid; grid-template-columns:100px 1fr 96px 80px 108px 62px; align-items:center;
     background:var(--sbb-red); color:white; font-size:15px; font-weight:900;
   }
 
@@ -119,29 +122,29 @@
   }
 
 
-  .col-headers-bus { grid-template-columns:80px 160px 90px 80px 100px 0px; column-gap:8px; }
-.col-headers-boat { grid-template-columns:80px 160px 90px 80px 100px 0px; column-gap:8px; }
+  .col-headers-bus { grid-template-columns:62px 1fr 68px 64px 76px; column-gap:8px; }
+.col-headers-boat { grid-template-columns:62px 1fr 68px 64px 76px; column-gap:8px; }
 
   .trains-list { flex:1; overflow:hidden; background:#fff; }
   .dep-block { border-bottom:1px solid #EDF0F4; }
   .dep-block:last-child { border-bottom:none; }
   .departure-row {
-    min-height:62px; display:grid; grid-template-columns:112px 1fr 106px 88px 118px 68px;
+    min-height:62px; display:grid; grid-template-columns:100px 1fr 96px 80px 108px 62px;
     align-items:center; padding:10px 24px 2px 24px;
   }
-  .stops-inline { display:flex; align-items:center; overflow:hidden; padding:0 24px 10px 128px; min-height:22px; }
+  .stops-inline { display:flex; align-items:center; overflow:hidden; padding:0 24px 10px 140px; min-height:22px; }
   .stop-chip { display:flex; align-items:center; gap:2px; white-space:nowrap; }
   .stop-name { font-size:14px; line-height:18px; color:#667085; font-weight:600; }
   .stop-sep { color:#B5BDCA; font-size:15px; margin:0 7px; }
   .line-icon img { height:34px; width:auto; display:block; }
   .line-badge-fallback { display:inline-flex; align-items:center; justify-content:center; padding:4px 8px; border-radius:4px; border:2px solid var(--sbb-red); font-weight:900; font-size:22px; background:#fff; color:var(--sbb-red); }
-  .destination { font-size:20px; font-weight:700; letter-spacing:-.2px; padding-left:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .destination { font-size:20px; font-weight:700; letter-spacing:-.2px; padding-left:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .sched-time { font-size:25px; font-weight:600; font-variant-numeric:tabular-nums; }
   .countdown { font-size:18px; font-weight:900; font-variant-numeric:tabular-nums; }
-  .countdown.normal { color:#98A2B3; } .countdown.soon { color:var(--orange); } .countdown.now { color:#FF3D00; }
+  .countdown.normal { color:#4B5563; } .countdown.soon { color:var(--orange); } .countdown.now { color:#FF3D00; }
   .status-cell { display:flex; align-items:center; gap:7px; }
   .status-icon { width:15px; height:15px; }
-  .status-text { font-size:15px; font-weight:900; white-space:nowrap; }
+  .status-text { font-size:13px; font-weight:900; white-space:nowrap; }
   .status-text.on-time { color:var(--green); }
   .status-text.on-time::before { content:'●'; margin-right:8px; font-size:13px; }
   .status-text.delayed { color:#FF5722; } .status-text.cancelled { color:#FF1744; }
@@ -153,8 +156,8 @@
     min-height:58px; display:grid; align-items:center; padding:8px 22px; border-bottom:1px solid #F0F2F5;
   }
 
-  .bus-row { grid-template-columns:80px 160px 90px 80px 100px 0px; column-gap:8px; }
-.boat-row { grid-template-columns:80px 160px 90px 80px 100px 0px; column-gap:8px; }
+  .bus-row { grid-template-columns:62px 1fr 68px 64px 76px; column-gap:8px; }
+.boat-row { grid-template-columns:62px 1fr 68px 64px 76px; column-gap:8px; }
   
   .bus-row:last-child,.boat-row:last-child { border-bottom:none; }
   .bus-icon-cell,.boat-icon-cell { display:flex; align-items:center; justify-content:flex-start; }
@@ -166,9 +169,9 @@
   .bus-line-badge.carpostal { background:var(--post-yellow); color:#111; }
   .bus-line-badge.tug { background:#E30613; color:white; }
   .boat-line-badge { background:var(--cgn-blue); color:white; min-width:42px; font-size:15px; }
-  .bus-dest,.boat-dest { font-size:20px; font-weight:700; padding-left:6px; padding-right:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .bus-time,.boat-time { font-size:21px; font-weight:600; font-variant-numeric:tabular-nums; }
-  .bus-in,.boat-in { font-size:18px; font-weight:900; color:#98A2B3; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .bus-dest,.boat-dest { font-size:18px; font-weight:700; padding-left:0px; padding-right:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+  .bus-time,.boat-time { font-size:18px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .bus-in,.boat-in { font-size:15px; font-weight:900; color:#4B5563; font-variant-numeric:tabular-nums; white-space:nowrap; }
   .bus-in.soon,.boat-in.soon { color:#FF1744; } .bus-in.now,.boat-in.now { color:#FF3D00; }
 
   .alerts-scroll {
@@ -184,7 +187,7 @@
   .alert-item.alert-warning { border-left:5px solid var(--orange); }
   .alert-item.alert-critical { border-left:5px solid #F44336; background:#FFF3F2; }
   .alert-item.alert-info { border-left:5px solid #2196F3; background:#F1F8FF; }
-  .alert-icon-c { font-size:23px; flex-shrink:0; margin-top:-1px; }
+  .alert-icon-c { display:none; }
   .alert-head-c { font-size:17px; font-weight:900; line-height:1.25; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .alert-desc-c { font-size:14px; color:#374151; margin-top:5px; line-height:1.25; max-height:54px; overflow:hidden; }
 
@@ -197,12 +200,17 @@
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.25} }
 
 
+  .map-label { background:white; border:2px solid #333; border-radius:4px; padding:2px 6px; font-size:11px; font-weight:700; white-space:nowrap; box-shadow:0 1px 4px rgba(0,0,0,.3); }
+  .map-label.train { border-color:var(--sbb-red); color:var(--sbb-red); }
+  .map-label.bus { border-color:var(--post-yellow); background:var(--post-yellow); color:#1a1a1a; }
+  .map-label.boat { border-color:var(--cgn-blue); color:var(--cgn-blue); }
+  .map-label.office { border-color:#555; color:#555; }
 </style>
 </head>
 <body>
 <div class="layout">
   <header class="top-header">
-    <!-- Left: SQ logo + Live Transport Information -->
+    <!-- Left: SQ logo + Public Transport -->
     <div style="display:flex;align-items:center;gap:18px;min-width:420px;">
       <img src="logo_sq.png" style="height:36px;width:auto;" alt="Swissquote">
       <div style="width:1px;height:36px;background:#D4DAE3;"></div>
@@ -229,7 +237,7 @@
       </div>
     </div>
     <div class="col-headers-train">
-      <span>Line</span><span>Destination</span><span>Dep.</span><span>In</span><span>Status</span><span style="text-align:center">Track</span>
+      <span>Line</span><span style="padding-left:16px;">Destination</span><span>Dep.</span><span>In</span><span>Status</span><span style="text-align:center">Track</span>
     </div>
     <div class="trains-list" id="trainsList"><div class="loading-msg"><span class="spinner"></span>Loading departures…</div></div>
     <div class="footer"><span><span class="live-dot"></span> <span id="lastUpdateTrain">Updating…</span></span><span>transport.opendata.ch</span></div>
@@ -245,7 +253,7 @@
           </div>
           
         </div>
-        <div class="col-headers-bus"><span>Line</span><span>Destination</span><span>Dep.</span><span>In</span><span>Status</span><span></span></div>
+        <div class="col-headers-bus"><span>Line</span><span>Destination</span><span>Dep.</span><span>In</span><span>Status</span></div>
         <div class="bus-list" id="busList"><div class="loading-msg"><span class="spinner"></span>Loading…</div></div>
       </section>
 
@@ -257,13 +265,13 @@
           </div>
           
         </div>
-        <div class="col-headers-boat"><span>Line</span><span>Destination</span><span>Dep.</span><span>In</span><span>Status</span><span></span></div>
+        <div class="col-headers-boat"><span>Line</span><span>Destination</span><span>Dep.</span><span>In</span><span>Status</span></div>
         <div class="boats-list" id="boatsList"><div class="loading-msg"><span class="spinner"></span>Loading…</div></div>
       </section>
     </div>
 
     <section class="panel panel-d">
-      <img src="map_tp_gland.png" style="width:100%;height:100%;object-fit:cover;display:block;" alt="Gland Transport Map">
+      <div id="map"></div>
     </section>
   </main>
 
@@ -436,14 +444,13 @@
         const diff=Math.round((d-now)/60000);return diff>=-1&&diff<=180;
       }).slice(0,8);
       if(!soon.length){list.innerHTML='<div class="loading-msg" style="color:#aaa;">No buses found.</div>';return;}
-      const busIcon='<img src="'+PICTO_BASE+'bus-right.svg" style="height:16px;width:auto;" alt="bus">';
       list.innerHTML=soon.map(dep=>{
         const num=String(dep.number||dep.name||'').replace(/\D/g,'');
         const dest=dep.to||'—';
         const cd=countdown(getSchedDate(dep));
         const badgeCls=num==='831'?'tug':'carpostal';
         return'<div class="bus-row">'
-          +'<div class="bus-icon-cell" style="gap:6px;">'+busIcon+'<span class="bus-line-badge '+badgeCls+'">'+num+'</span></div>'
+          +'<div class="bus-icon-cell"><span class="bus-line-badge '+badgeCls+'">'+num+'</span></div>'
           +'<div class="bus-dest">'+dest+'</div>'
           +'<div class="bus-time">'+fmtHHMM(getSchedDate(dep))+'</div>'
           +'<div class="bus-in '+cd.cls+'">'+cd.text+'</div>'
@@ -477,14 +484,13 @@
         const diff=Math.round((d-now)/60000);return diff>=-2&&diff<=240;
       });
       if(!filtered.length){list.innerHTML='<div class="loading-msg" style="color:#aaa;">No more today.</div>';return;}
-      const boatIcon='<img src="'+PICTO_BASE+'jetty-right.svg" style="height:16px;width:auto;" alt="boat">';
       list.innerHTML=filtered.map(dep=>{
         const dest=dep.to||'—';
         const cd=countdown(getSchedDate(dep));
         const lineNum=(dep.number||dep.name||dep.category||'').replace(/^0+/,'');
         const lineBadge=lineNum?'<span class="boat-line-badge">'+lineNum+'</span>':'';
         return'<div class="boat-row">'
-          +'<div class="boat-icon-cell" style="gap:6px;">'+boatIcon+lineBadge+'</div>'
+          +'<div class="boat-icon-cell">'+lineBadge+'</div>'
           +'<div class="boat-dest">'+dest+'</div>'
           +'<div class="boat-time">'+fmtHHMM(getSchedDate(dep))+'</div>'
           +'<div class="boat-in '+cd.cls+'">'+cd.text+'</div>'
@@ -521,7 +527,7 @@
         const icon=isCritical?'🔴':isInfo?'🔧':'⚠️';
         const desc=(a.description||'').replace(/<[^>]+>/g,'');
         const shortDesc=desc.length>145?desc.substring(0,145)+'…':desc;
-        return'<div class="alert-item '+cls+'"><div class="alert-icon-c">'+icon+'</div>'
+        return'<div class="alert-item '+cls+'">'
           +'<div><div class="alert-head-c">'+a.header+'</div>'
           +(shortDesc?'<div class="alert-desc-c">'+shortDesc+'</div>':'')
           +'</div></div>';
@@ -531,7 +537,51 @@
 
   // ═══════════ PANEL D — MAP (Leaflet + OpenStreetMap) ═══════════
   function initMap(){
-  
+    // Use CartoDB Positron — cleaner, less cluttered than OSM default
+    const map = L.map('map', {
+      center: [46.4190, 6.2695],
+      zoom: 17,
+      zoomControl: false,
+      attributionControl: true,
+      dragging: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      touchZoom: false,
+    });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 19,
+    }).addTo(map);
+
+    // ── Icon factory ──
+    function makeMarker(color, textColor, label, sublabel) {
+      const html =
+        '<div style="'
+        +'background:'+color+';'
+        +'color:'+textColor+';'
+        +'border-radius:8px;'
+        +'padding:5px 10px;'
+        +'font-size:12px;'
+        +'font-weight:700;'
+        +'white-space:nowrap;'
+        +'box-shadow:0 2px 8px rgba(0,0,0,0.25);'
+        +'border:2px solid rgba(255,255,255,0.8);'
+        +'line-height:1.3;'
+        +'text-align:center;'
+        +'">'
+        +label
+        +(sublabel?'<br><span style="font-size:10px;font-weight:400;opacity:0.85;">'+sublabel+'</span>':'')
+        +'</div>';
+      return L.divIcon({
+        className: '',
+        html: html,
+        iconAnchor: [0, 0],
+        popupAnchor: [0, -10],
+      });
+    }
+
+
   }
 
   // ═══════════ Init ═══════════
