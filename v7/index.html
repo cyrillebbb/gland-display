@@ -202,18 +202,19 @@
 <body>
 <div class="layout">
   <header class="top-header">
-    <div class="brand-zone">
-      <div class="station-cluster">
-        <div style="display:flex;align-items:center;gap:20px;">
-          <div style="font-size:30px;font-weight:700;letter-spacing:-.2px;color:#1a1a1a;">Public Transport</div>
-          <div style="width:1px;height:28px;background:#D4DAE3;"></div>
-          <div class="station-name">Gland</div>
-
-        </div>
-      </div>
+    <!-- Left: SQ logo + Live Transport Information -->
+    <div style="display:flex;align-items:center;gap:18px;min-width:420px;">
+      <img src="logo_sq.png" style="height:36px;width:auto;" alt="Swissquote">
+      <div style="width:1px;height:36px;background:#D4DAE3;"></div>
+      <div style="font-size:28px;font-weight:700;letter-spacing:-.2px;color:#1a1a1a;">Live Transport Information</div>
     </div>
-    <div class="clock-wrap" style="flex-direction:row;align-items:center;gap:20px;">
-      <div class="date-str" id="dateStr" style="font-size:22px;color:#4a5568;font-weight:700;white-space:nowrap;">--</div>
+    <!-- Center: Gland (absolute) -->
+    <div style="position:absolute;left:0;right:0;display:flex;justify-content:center;align-items:center;pointer-events:none;">
+      <div class="station-name">Gland</div>
+    </div>
+    <!-- Right: date + clock -->
+    <div style="display:flex;align-items:center;gap:16px;min-width:420px;justify-content:flex-end;">
+      <div class="date-str" id="dateStr" style="font-size:26px;color:#07101F;font-weight:700;white-space:nowrap;">--</div>
       <div style="width:1px;height:28px;background:#D4DAE3;"></div>
       <div class="clock" id="clock">--:--:--</div>
     </div>
@@ -262,7 +263,7 @@
     </div>
 
     <section class="panel panel-d">
-      <img src="map_tp_gland.png" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);display:block;" alt="Gland Transport Map">
+      <img src="map_tp_gland.png" style="width:100%;height:100%;object-fit:cover;display:block;" alt="Gland Transport Map">
     </section>
   </main>
 
@@ -528,9 +529,9 @@
     }catch(e){}
   }
 
-  function initMap(){}
-
-
+  // ═══════════ PANEL D — MAP (Leaflet + OpenStreetMap) ═══════════
+  function initMap(){
+  
   }
 
   // ═══════════ Init ═══════════
