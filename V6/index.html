@@ -308,6 +308,11 @@
   function fmtHHMM(d){ if(!d)return'--:--'; return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
   function getSchedDate(dep){
     const s=dep.stop||{};
+    // Use prognosis.departure (real time) if available — gives accurate countdown
+    if(s.prognosis&&s.prognosis.departure){
+      const prog=tsToDate(s.prognosis.departure);
+      if(prog) return prog;
+    }
     return tsToDate(s.departureTimestamp)||tsToDate(dep.departureTimestamp)||tsToDate(s.departure)||tsToDate(dep.departure);
   }
   function countdown(depDate){
@@ -318,7 +323,19 @@
     if(diff<=5)return{text:diff+' min',cls:'soon'};
     return{text:diff+' min',cls:'normal'};
   }
-  function delayMin(stop){ if(!stop||stop.departureDelay==null)return 0; return Math.round(stop.departureDelay/60); }
+  function delayMin(stop){
+    if(!stop) return 0;
+    if(stop.departureDelay!=null) return Math.round(stop.departureDelay/60);
+    if(stop.prognosis&&stop.prognosis.departure&&stop.departure){
+      const sched=new Date(stop.departure).getTime();
+      const prog=new Date(stop.prognosis.departure).getTime();
+      if(!isNaN(sched)&&!isNaN(prog)){
+        const diff=Math.round((prog-sched)/60000);
+        return diff>0?diff:0;
+      }
+    }
+    return 0;
+  }
   function lineIconHtml(cat,num){
     const c=(cat||'').toLowerCase(),n=(num||'').trim();
     const primary=ICON_BASE+(n?c+'-'+n:c)+'.svg';
@@ -379,7 +396,7 @@
   async function refreshTrains(){
     try{
       Object.keys(stopsCache).forEach(k=>delete stopsCache[k]);
-      const r=await fetch('https://transport.opendata.ch/v1/stationboard?station=Gland&limit=9&type=departure');
+      const r=await fetch('https://transport.opendata.ch/v1/stationboard?station=Gland&limit=9&type=departure',{cache:'no-store'});
       if(!r.ok)throw new Error('HTTP '+r.status);
       const data=await r.json();
       trainsData=data.stationboard||[];
