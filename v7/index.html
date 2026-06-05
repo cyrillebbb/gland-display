@@ -222,7 +222,7 @@
     <!-- Right: date + clock -->
     <div style="display:flex;align-items:center;gap:16px;width:420px;justify-content:flex-end;flex-shrink:0;">
       <div class="date-str" id="dateStr" style="font-size:26px;color:#07101F;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums;">--</div>
-      <div style="width:1px;height:28px;background:#D4DAE3;"></div>
+      <div style="width:1px;height:28px;background:#D4DAE3;flex-shrink:0;"></div>
       <div class="clock" id="clock">--:--:--</div>
     </div>
   </header>
@@ -312,6 +312,11 @@
       const prog=tsToDate(s.prognosis.departure);
       if(prog) return prog;
     }
+    return tsToDate(s.departureTimestamp)||tsToDate(dep.departureTimestamp)||tsToDate(s.departure)||tsToDate(dep.departure);
+  }
+  function getPlannedDate(dep){
+    // Always returns the SCHEDULED time — for display only, never affected by delays
+    const s=dep.stop||{};
     return tsToDate(s.departureTimestamp)||tsToDate(dep.departureTimestamp)||tsToDate(s.departure)||tsToDate(dep.departure);
   }
   function countdown(depDate){
@@ -415,7 +420,7 @@
           +'<div class="departure-row">'
           +'<div>'+lineIconHtml(cat,num)+'</div>'
           +'<div class="destination">'+dest+'</div>'
-          +'<div class="sched-time">'+fmtHHMM(schedDate)+'</div>'
+          +'<div class="sched-time">'+fmtHHMM(getPlannedDate(dep))+'</div>'
           +'<div><span class="countdown '+cd.cls+'" id="tcd-'+i+'">'+cd.text+'</span></div>'
           +'<div>'+statusHtml(delay,cancelled)+'</div>'
           +'<div class="platform">'+(plat&&plat!=='—'?'<img src="'+PICTO_BASE+'tracks-'+plat+'-fr-small.svg" style="height:22px;width:auto;" alt="'+plat+'">':plat)+'</div>'
@@ -468,7 +473,7 @@
         return'<div class="bus-row">'
           +'<div class="bus-icon-cell"><span class="bus-line-badge '+badgeCls+'">'+num+'</span></div>'
           +'<div class="bus-dest">'+dest+'</div>'
-          +'<div class="bus-time">'+fmtHHMM(getSchedDate(dep))+'</div>'
+          +'<div class="bus-time">'+fmtHHMM(getPlannedDate(dep))+'</div>'
           +'<div class="bus-in '+cd.cls+'">'+cd.text+'</div>'
           +'<div>'+statusHtml(delayMin(dep.stop),dep.stop&&dep.stop.cancelled)+'</div>'
           +'</div>';
@@ -508,7 +513,7 @@
         return'<div class="boat-row">'
           +'<div class="boat-icon-cell">'+lineBadge+'</div>'
           +'<div class="boat-dest">'+dest+'</div>'
-          +'<div class="boat-time">'+fmtHHMM(getSchedDate(dep))+'</div>'
+          +'<div class="boat-time">'+fmtHHMM(getPlannedDate(dep))+'</div>'
           +'<div class="boat-in '+cd.cls+'">'+cd.text+'</div>'
           +'<div>'+statusHtml(delayMin(dep.stop),dep.stop&&dep.stop.cancelled)+'</div>'
           +'</div>';
