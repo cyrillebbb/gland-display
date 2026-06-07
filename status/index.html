@@ -621,6 +621,16 @@
       const data = await r.json();
       const cache = r.headers.get('X-Cache')||'—';
 
+      // 429 = API rate limit — Worker serves cached data, not a real error
+      if(data.error === '429') {
+        // Just note it quietly — don't show as error
+        statuses.worker = (data.alerts && data.alerts.length >= 0) ? 'ok' : 'warning';
+        setStatus('worker', statuses.worker,
+          statuses.worker === 'ok' ? 'Online (rate limited)' : 'Rate limited');
+        // Don't show error box for 429
+        updateOverall();
+        return;
+      }
       if(data.error && data.error !== '200'){
         throw new Error('Worker error: '+data.error);
       }
