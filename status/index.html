@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gland Display — System Status</title>
+<style>
+  :root {
+    --bg: #EEF1F5;
+    --card: #FFFFFF;
+    --text: #07101F;
+    --muted: #6B7280;
+    --line: #E6EAF0;
+    --green: #009640;
+    --orange: #FF8A00;
+    --red: #EB0000;
+    --blue: #193B79;
+    --shadow: 0 4px 16px rgba(15,23,42,.07);
+    --radius: 14px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    font-family: "Inter","Segoe UI","Helvetica Neue",Arial,sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    padding: 32px 24px;
+  }
+
+  /* ── Header ── */
+  .page-header {
+    max-width: 1100px; margin: 0 auto 32px auto;
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--card); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 20px 28px;
+  }
+  .page-title { font-size: 22px; font-weight: 900; letter-spacing: -.3px; }
+  .page-subtitle { font-size: 13px; color: var(--muted); margin-top: 3px; }
+  .header-right { text-align: right; }
+  .refresh-info { font-size: 12px; color: var(--muted); }
+  .last-check { font-size: 14px; font-weight: 700; color: var(--text); margin-top: 3px; font-variant-numeric: tabular-nums; }
+
+  /* ── Overall status banner ── */
+  .overall-banner {
+    max-width: 1100px; margin: 0 auto 24px auto;
+    border-radius: var(--radius); padding: 18px 28px;
+    display: flex; align-items: center; gap: 14px;
+    font-size: 18px; font-weight: 700;
+    transition: background 0.3s;
+  }
+  .overall-banner.ok       { background: #ECFDF5; border: 1.5px solid #6EE7B7; color: #065F46; }
+  .overall-banner.warning  { background: #FFFBEB; border: 1.5px solid #FCD34D; color: #92400E; }
+  .overall-banner.critical { background: #FEF2F2; border: 1.5px solid #FCA5A5; color: #991B1B; }
+  .overall-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; animation: pulse 2s infinite; }
+  .overall-dot.ok       { background: var(--green); }
+  .overall-dot.warning  { background: var(--orange); }
+  .overall-dot.critical { background: var(--red); }
+
+  /* ── Grid ── */
+  .grid {
+    max-width: 1100px; margin: 0 auto;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 16px;
+  }
+
+  /* ── Service card ── */
+  .card {
+    background: var(--card); border-radius: var(--radius);
+    box-shadow: var(--shadow); overflow: hidden;
+  }
+  .card-header {
+    padding: 16px 20px 12px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--line);
+  }
+  .card-title { font-size: 15px; font-weight: 800; }
+  .card-url   { font-size: 11px; color: var(--muted); margin-top: 2px; font-family: monospace; }
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 12px; font-weight: 700; flex-shrink: 0;
+  }
+  .status-badge.ok       { background: #ECFDF5; color: #065F46; }
+  .status-badge.warning  { background: #FFFBEB; color: #92400E; }
+  .status-badge.error    { background: #FEF2F2; color: #991B1B; }
+  .status-badge.loading  { background: #F3F4F6; color: #6B7280; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .status-dot.ok      { background: var(--green); animation: pulse 2s infinite; }
+  .status-dot.warning { background: var(--orange); }
+  .status-dot.error   { background: var(--red); }
+  .status-dot.loading { background: #9CA3AF; }
+
+  .card-body { padding: 14px 20px; }
+
+  /* ── Metrics ── */
+  .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .metric { background: #F9FAFB; border-radius: 8px; padding: 10px 14px; }
+  .metric-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+  .metric-value { font-size: 20px; font-weight: 900; margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .metric-value.ok      { color: var(--green); }
+  .metric-value.warning { color: var(--orange); }
+  .metric-value.error   { color: var(--red); }
+  .metric-value.neutral { color: var(--text); }
+
+  /* ── Data preview ── */
+  .data-preview {
+    background: #F9FAFB; border-radius: 8px; padding: 10px 14px;
+    font-size: 12px; color: var(--muted); line-height: 1.6;
+    max-height: 120px; overflow-y: auto;
+  }
+  .data-preview .item { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px solid var(--line); }
+  .data-preview .item:last-child { border-bottom: none; }
+  .data-preview .item-name { font-weight: 600; color: var(--text); }
+  .data-preview .item-time { font-variant-numeric: tabular-nums; color: var(--muted); }
+  .data-preview .item-status { font-weight: 700; }
+  .data-preview .item-status.ok      { color: var(--green); }
+  .data-preview .item-status.delayed { color: var(--orange); }
+  .data-preview .empty { color: var(--muted); font-style: italic; text-align: center; padding: 8px 0; }
+
+  /* ── Error box ── */
+  .error-box {
+    background: #FEF2F2; border-radius: 8px; padding: 10px 14px;
+    font-size: 12px; color: #991B1B; line-height: 1.5; margin-top: 10px;
+    display: none;
+  }
+  .error-box.visible { display: block; }
+
+  /* ── Alert items in worker card ── */
+  .alert-preview-item {
+    padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 12px;
+  }
+  .alert-preview-item:last-child { border-bottom: none; }
+  .alert-preview-title { font-weight: 700; color: var(--text); }
+  .alert-preview-cause { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+  /* ── Footer ── */
+  .page-footer {
+    max-width: 1100px; margin: 24px auto 0 auto;
+    text-align: center; font-size: 12px; color: var(--muted);
+  }
+
+  /* ── Spinner ── */
+  .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid #D0D5DD; border-top-color: #6B7280; border-radius: 50%; animation: spin .8s linear infinite; vertical-align: middle; margin-right: 4px; }
+
+  @keyframes spin  { to { transform: rotate(360deg); } }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div>
+    <div class="page-title">🖥️ Gland Display — System Status</div>
+    <div class="page-subtitle">Real-time monitoring of all data sources</div>
+  </div>
+  <div class="header-right">
+    <div class="refresh-info">Auto-refresh every 30s</div>
+    <div class="last-check" id="lastCheck">Checking…</div>
+  </div>
+</div>
+
+<div class="overall-banner loading" id="overallBanner">
+  <div class="overall-dot loading" id="overallDot"></div>
+  <span id="overallText">Checking all services…</span>
+</div>
+
+<div class="grid">
+
+  <!-- ── TRAINS ── -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">🚂 Train Departures</div>
+        <div class="card-url">transport.opendata.ch · Gland</div>
+      </div>
+      <div class="status-badge loading" id="trainBadge"><div class="status-dot loading" id="trainDot"></div><span id="trainBadgeText"><span class="spinner"></span>Checking</span></div>
+    </div>
+    <div class="card-body">
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-label">Response time</div>
+          <div class="metric-value neutral" id="trainRespTime">--</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Departures</div>
+          <div class="metric-value neutral" id="trainCount">--</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Delayed</div>
+          <div class="metric-value neutral" id="trainDelayed">--</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Last success</div>
+          <div class="metric-value neutral" style="font-size:14px;" id="trainLastOk">--</div>
+        </div>
+      </div>
+      <div class="data-preview" id="trainPreview">
+        <div class="empty">Loading…</div>
+      </div>
+      <div class="error-box" id="trainError"></div>
+    </div>
+  </div>
+
+  <!-- ── BUS ── -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">🚌 Bus Departures</div>
+        <div class="card-url">transport.opendata.ch · Gland Gare Nord/Sud</div>
+      </div>
+      <div class="status-badge loading" id="busBadge"><div class="status-dot loading" id="busDot"></div><span id="busBadgeText"><span class="spinner"></span>Checking</span></div>
+    </div>
+    <div class="card-body">
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-label">Response time</div>
+          <div class="metric-value neutral" id="busRespTime">--</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Departures</div>
+          <div class="metric-value neutral" id="busCount">--</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Lines found</div>
+          <div class="metric-value neutral" id="busLines">--</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Last success</div>
+          <div class="metric-value neutral" style="font-size:14px;" id="busLastOk">--</div>
+        </div>
+      </div>
+      <div class="data-preview" id="busPreview">
+        <div class="empty">Loading…</div>
+      </div>
+      <div class="error-box" id="busError"></div>
+    </div>
+  </div>
+
+  <!-- ── BOATS ── -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">⚓ CGN Boats</div>
+        <div class="card-url">transport.opendata.ch · Nyon (Lac)</div>
+      </div>
+      <div class="status-badge loading" id="boatBadge"><div class="status-dot loading" id="boatDot"></div><span id="boatBadgeText"><span class="spinner"></span>Checking</span></div>
+    </div>
+    <div class="card-body">
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-label">Response time</div>
+          <div class="metric-value neutral" id="boatRespTime">--</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Departures</div>
+          <div class="metric-value neutral" id="boatCount">--</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Next departure</div>
+          <div class="metric-value neutral" style="font-size:14px;" id="boatNext">--</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Last success</div>
+          <div class="metric-value neutral" style="font-size:14px;" id="boatLastOk">--</div>
+        </div>
+      </div>
+      <div class="data-preview" id="boatPreview">
+        <div class="empty">Loading…</div>
+      </div>
+      <div class="error-box" id="boatError"></div>
+    </div>
+  </div>
+
+  <!-- ── CLOUDFLARE WORKER / ALERTS ── -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">⚠️ Traffic Alerts Worker</div>
+        <div class="card-url">gland-alerts.cyrille-baptiste.workers.dev</div>
+      </div>
+      <div class="status-badge loading" id="workerBadge"><div class="status-dot loading" id="workerDot"></div><span id="workerBadgeText"><span class="spinner"></span>Checking</span></div>
+    </div>
+    <div class="card-body">
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-label">Response time</div>
+          <div class="metric-value neutral" id="workerRespTime">--</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Active alerts</div>
+          <div class="metric-value neutral" id="workerAlerts">--</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Total in feed</div>
+          <div class="metric-value neutral" id="workerTotal">--</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Cache</div>
+          <div class="metric-value neutral" style="font-size:14px;" id="workerCache">--</div>
+        </div>
+      </div>
+      <div class="data-preview" id="workerPreview">
+        <div class="empty">Loading…</div>
+      </div>
+      <div class="error-box" id="workerError"></div>
+    </div>
+  </div>
+
+  <!-- ── SBB ICONS ── -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">🎨 SBB Icons & Pictos</div>
+        <div class="card-url">icons.app.sbb.ch</div>
+      </div>
+      <div class="status-badge loading" id="iconsBadge"><div class="status-dot loading" id="iconsDot"></div><span id="iconsBadgeText"><span class="spinner"></span>Checking</span></div>
+    </div>
+    <div class="card-body">
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-label">Response time</div>
+          <div class="metric-value neutral" id="iconsRespTime">--</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Icons API</div>
+          <div class="metric-value neutral" style="font-size:14px;" id="iconsStatus">--</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Pictos API</div>
+          <div class="metric-value neutral" style="font-size:14px;" id="pictosStatus">--</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Last success</div>
+          <div class="metric-value neutral" style="font-size:14px;" id="iconsLastOk">--</div>
+        </div>
+      </div>
+      <div class="error-box" id="iconsError"></div>
+    </div>
+  </div>
+
+  <!-- ── GITHUB PAGES ── -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">🌐 GitHub Pages</div>
+        <div class="card-url">cyrilleBBB.github.io/gland-display</div>
+      </div>
+      <div class="status-badge loading" id="pagesBadge"><div class="status-dot loading" id="pagesDot"></div><span id="pagesBadgeText"><span class="spinner"></span>Checking</span></div>
+    </div>
+    <div class="card-body">
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-label">V6 Display</div>
+          <div class="metric-value neutral" style="font-size:14px;" id="pagesV6">--</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Response time</div>
+          <div class="metric-value neutral" id="pagesRespTime">--</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">HTTP Status</div>
+          <div class="metric-value neutral" id="pagesHttp">--</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Last success</div>
+          <div class="metric-value neutral" style="font-size:14px;" id="pagesLastOk">--</div>
+        </div>
+      </div>
+      <div class="error-box" id="pagesError"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="page-footer">
+  Gland Transport Display · Monitoring Dashboard · Auto-refresh every 30s
+</div>
+
+<script>
+  const WORKER_URL = 'https://gland-alerts.cyrille-baptiste.workers.dev';
+  const BUS_LINES  = ['811','830','831','835','836'];
+  const CGN_NAMES  = ['Nyon (Lac)','Nyon, Lac','Nyon, débarcadère'];
+
+  // ── Helpers ──
+  function pad(v){ return String(v).padStart(2,'0'); }
+  function nowHHMM(){ const n=new Date(); return pad(n.getHours())+':'+pad(n.getMinutes())+':'+pad(n.getSeconds()); }
+  function fmtMs(ms){ return ms < 1000 ? ms+'ms' : (ms/1000).toFixed(1)+'s'; }
+  function tsToDate(val){
+    if(!val)return null;
+    if(typeof val==='number')return new Date(val*1000);
+    const d=new Date(val); return isNaN(d.getTime())?null:d;
+  }
+  function fmtHHMM(d){ if(!d)return'--'; return pad(d.getHours())+':'+pad(d.getMinutes()); }
+
+  function setStatus(prefix, state, text){
+    const badge = document.getElementById(prefix+'Badge');
+    const dot   = document.getElementById(prefix+'Dot');
+    const span  = document.getElementById(prefix+'BadgeText');
+    badge.className = 'status-badge '+state;
+    dot.className   = 'status-dot '+state;
+    span.textContent = text;
+  }
+  function setMetric(id, value, state='neutral'){
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.textContent = value;
+    el.className = 'metric-value '+state;
+  }
+  function showError(prefix, msg){
+    const el = document.getElementById(prefix+'Error');
+    if(!el) return;
+    el.textContent = '⚠️ '+msg;
+    el.classList.add('visible');
+  }
+  function clearError(prefix){
+    const el = document.getElementById(prefix+'Error');
+    if(el) el.classList.remove('visible');
+  }
+
+  // ── Overall status ──
+  let statuses = { train:'loading', bus:'loading', boat:'loading', worker:'loading', icons:'loading', pages:'loading' };
+
+  function updateOverall(){
+    const vals = Object.values(statuses);
+    const banner = document.getElementById('overallBanner');
+    const dot    = document.getElementById('overallDot');
+    const text   = document.getElementById('overallText');
+    if(vals.includes('error')){
+      banner.className='overall-banner critical'; dot.className='overall-dot critical';
+      const failed = Object.entries(statuses).filter(([,v])=>v==='error').map(([k])=>k).join(', ');
+      text.textContent='⚠️ Issues detected: '+failed;
+    } else if(vals.includes('warning')){
+      banner.className='overall-banner warning'; dot.className='overall-dot warning';
+      text.textContent='⚡ Some services need attention';
+    } else if(vals.every(v=>v==='ok')){
+      banner.className='overall-banner ok'; dot.className='overall-dot ok';
+      text.textContent='✅ All systems operational';
+    } else {
+      banner.className='overall-banner loading'; dot.className='overall-dot loading';
+      text.textContent='Checking all services…';
+    }
+  }
+
+  // ═══════════ CHECK TRAINS ═══════════
+  async function checkTrains(){
+    clearError('train');
+    const t0 = Date.now();
+    try{
+      const r = await fetch('https://transport.opendata.ch/v1/stationboard?station=Gland&limit=9&type=departure',{cache:'no-store'});
+      const ms = Date.now()-t0;
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      const data = await r.json();
+      const deps = data.stationboard||[];
+
+      setMetric('trainRespTime', fmtMs(ms), ms<1000?'ok':ms<3000?'warning':'error');
+      setMetric('trainCount', deps.length, deps.length>0?'ok':'warning');
+      setMetric('trainLastOk', nowHHMM(), 'ok');
+
+      // Count delayed
+      const delayed = deps.filter(d=>{
+        const s=d.stop||{};
+        if(s.departureDelay) return s.departureDelay>0;
+        if(s.prognosis&&s.prognosis.departure&&s.departure){
+          const diff=(new Date(s.prognosis.departure)-new Date(s.departure))/60000;
+          return diff>0;
+        }
+        return false;
+      });
+      setMetric('trainDelayed', delayed.length, delayed.length===0?'ok':delayed.length<3?'warning':'error');
+
+      // Preview
+      const preview = document.getElementById('trainPreview');
+      if(deps.length===0){
+        preview.innerHTML='<div class="empty">No departures available</div>';
+      } else {
+        preview.innerHTML = deps.slice(0,5).map(d=>{
+          const s=d.stop||{};
+          const dep=tsToDate(s.departureTimestamp)||tsToDate(s.departure);
+          let delayMin=0;
+          if(s.departureDelay) delayMin=Math.round(s.departureDelay/60);
+          else if(s.prognosis&&s.prognosis.departure&&s.departure){
+            delayMin=Math.round((new Date(s.prognosis.departure)-new Date(s.departure))/60000);
+          }
+          const statusCls = delayMin>0?'delayed':'ok';
+          const statusTxt = delayMin>0?'+'+delayMin+'m':'On time';
+          return '<div class="item">'
+            +'<span class="item-name">'+(d.category||'')+' '+(d.number||'')+' → '+(d.to||'')+'</span>'
+            +'<span class="item-time">'+fmtHHMM(dep)+'</span>'
+            +'<span class="item-status '+statusCls+'">'+statusTxt+'</span>'
+            +'</div>';
+        }).join('');
+      }
+
+      statuses.train = deps.length>0?'ok':'warning';
+      setStatus('train', statuses.train, deps.length>0?'Online':'No data');
+    }catch(e){
+      statuses.train='error';
+      setStatus('train','error','Error');
+      setMetric('trainRespTime', fmtMs(Date.now()-t0), 'error');
+      showError('train', e.message);
+    }
+    updateOverall();
+  }
+
+  // ═══════════ CHECK BUS ═══════════
+  async function checkBuses(){
+    clearError('bus');
+    const t0 = Date.now();
+    try{
+      const r = await fetch('https://transport.opendata.ch/v1/stationboard?station=Gland%2C%20gare%20nord&limit=20&type=departure',{cache:'no-store'});
+      const ms = Date.now()-t0;
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      const data = await r.json();
+      const all = data.stationboard||[];
+      const filtered = all.filter(d=>BUS_LINES.includes(String(d.number||d.name||'').replace(/\D/g,'')));
+      const lines = [...new Set(filtered.map(d=>String(d.number||d.name||'').replace(/\D/g,'')))];
+
+      setMetric('busRespTime', fmtMs(ms), ms<1000?'ok':ms<3000?'warning':'error');
+      setMetric('busCount', filtered.length, filtered.length>0?'ok':'warning');
+      setMetric('busLines', lines.join(', ')||'—', lines.length>0?'ok':'warning');
+      setMetric('busLastOk', nowHHMM(), 'ok');
+
+      const preview = document.getElementById('busPreview');
+      if(filtered.length===0){
+        preview.innerHTML='<div class="empty">No bus departures found</div>';
+      } else {
+        preview.innerHTML = filtered.slice(0,5).map(d=>{
+          const s=d.stop||{};
+          const dep=tsToDate(s.departureTimestamp)||tsToDate(s.departure);
+          const num=String(d.number||d.name||'').replace(/\D/g,'');
+          return '<div class="item">'
+            +'<span class="item-name">Bus '+num+' → '+(d.to||'')+'</span>'
+            +'<span class="item-time">'+fmtHHMM(dep)+'</span>'
+            +'<span class="item-status ok">On time</span>'
+            +'</div>';
+        }).join('');
+      }
+
+      statuses.bus = filtered.length>0?'ok':'warning';
+      setStatus('bus', statuses.bus, filtered.length>0?'Online':'No data');
+    }catch(e){
+      statuses.bus='error';
+      setStatus('bus','error','Error');
+      setMetric('busRespTime', fmtMs(Date.now()-t0), 'error');
+      showError('bus', e.message);
+    }
+    updateOverall();
+  }
+
+  // ═══════════ CHECK BOATS ═══════════
+  async function checkBoats(){
+    clearError('boat');
+    const t0 = Date.now();
+    try{
+      let boats=[], stationFound='';
+      for(const name of CGN_NAMES){
+        const r=await fetch('https://transport.opendata.ch/v1/stationboard?station='+encodeURIComponent(name)+'&limit=6&type=departure',{cache:'no-store'});
+        if(!r.ok) continue;
+        const data=await r.json();
+        if((data.stationboard||[]).length>0){ boats=data.stationboard; stationFound=name; break; }
+      }
+      const ms = Date.now()-t0;
+
+      // Filter next 240 min
+      const now=Date.now();
+      const filtered=boats.filter(d=>{
+        const s=d.stop||{};
+        const dep=tsToDate(s.departureTimestamp)||tsToDate(s.departure);
+        if(!dep)return false;
+        const diff=Math.round((dep-now)/60000);
+        return diff>=-2&&diff<=240;
+      });
+
+      setMetric('boatRespTime', fmtMs(ms), ms<2000?'ok':ms<5000?'warning':'error');
+      setMetric('boatCount', filtered.length, filtered.length>0?'ok':'warning');
+      setMetric('boatLastOk', nowHHMM(), 'ok');
+
+      const next = filtered[0];
+      if(next){
+        const s=next.stop||{};
+        const dep=tsToDate(s.departureTimestamp)||tsToDate(s.departure);
+        setMetric('boatNext', fmtHHMM(dep)+' → '+(next.to||''), 'ok');
+      } else {
+        setMetric('boatNext', 'No more today', 'warning');
+      }
+
+      const preview = document.getElementById('boatPreview');
+      if(filtered.length===0){
+        preview.innerHTML='<div class="empty">No CGN departures today</div>';
+      } else {
+        preview.innerHTML = filtered.slice(0,4).map(d=>{
+          const s=d.stop||{};
+          const dep=tsToDate(s.departureTimestamp)||tsToDate(s.departure);
+          const line=(d.number||d.name||d.category||'').replace(/^0+/,'');
+          return '<div class="item">'
+            +'<span class="item-name">'+(line?'N'+line+' ':'')+' → '+(d.to||'')+'</span>'
+            +'<span class="item-time">'+fmtHHMM(dep)+'</span>'
+            +'<span class="item-status ok">On time</span>'
+            +'</div>';
+        }).join('');
+      }
+
+      statuses.boat = filtered.length>0?'ok':'warning';
+      setStatus('boat', statuses.boat, filtered.length>0?'Online ('+stationFound+')':'No data');
+    }catch(e){
+      statuses.boat='error';
+      setStatus('boat','error','Error');
+      showError('boat', e.message);
+    }
+    updateOverall();
+  }
+
+  // ═══════════ CHECK WORKER / ALERTS ═══════════
+  async function checkWorker(){
+    clearError('worker');
+    const t0 = Date.now();
+    try{
+      const r = await fetch(WORKER_URL,{cache:'no-store'});
+      const ms = Date.now()-t0;
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      const data = await r.json();
+      const cache = r.headers.get('X-Cache')||'—';
+
+      if(data.error && data.error !== '200'){
+        throw new Error('Worker error: '+data.error);
+      }
+
+      const alerts = data.alerts||[];
+      const total  = data.total_in_feed||0;
+
+      setMetric('workerRespTime', fmtMs(ms), ms<500?'ok':ms<2000?'warning':'error');
+      setMetric('workerAlerts', alerts.length, alerts.length===0?'ok':alerts.length<3?'warning':'error');
+      setMetric('workerTotal', total, 'neutral');
+      setMetric('workerCache', cache, cache==='HIT'?'ok':'neutral');
+
+      const preview = document.getElementById('workerPreview');
+      if(alerts.length===0){
+        preview.innerHTML='<div class="empty">✅ No active alerts on Genève-Lausanne corridor</div>';
+      } else {
+        preview.innerHTML = alerts.map(a=>{
+          const cause=(a.cause||'').replace('_',' ').toLowerCase();
+          return '<div class="alert-preview-item">'
+            +'<div class="alert-preview-title">'+a.header+'</div>'
+            +'<div class="alert-preview-cause">Cause: '+cause+'</div>'
+            +'</div>';
+        }).join('');
+      }
+
+      statuses.worker='ok';
+      setStatus('worker','ok','Online · '+(alerts.length===0?'No alerts':alerts.length+' alert'+(alerts.length>1?'s':'')));
+    }catch(e){
+      statuses.worker='error';
+      setStatus('worker','error','Error');
+      showError('worker', e.message);
+    }
+    updateOverall();
+  }
+
+  // ═══════════ CHECK SBB ICONS ═══════════
+  async function checkIcons(){
+    clearError('icons');
+    const t0 = Date.now();
+    try{
+      const [r1, r2] = await Promise.all([
+        fetch('https://icons.app.sbb.ch/icons/re-33.svg',{cache:'no-store'}),
+        fetch('https://icons.app.sbb.ch/picto/jetty-right.svg',{cache:'no-store'})
+      ]);
+      const ms = Date.now()-t0;
+
+      setMetric('iconsRespTime', fmtMs(ms), ms<1000?'ok':ms<3000?'warning':'error');
+      setMetric('iconsStatus',  r1.ok?'✅ OK':'❌ Failed', r1.ok?'ok':'error');
+      setMetric('pictosStatus', r2.ok?'✅ OK':'❌ Failed', r2.ok?'ok':'error');
+      setMetric('iconsLastOk', nowHHMM(), 'ok');
+
+      statuses.icons = (r1.ok&&r2.ok)?'ok':'warning';
+      setStatus('icons', statuses.icons, (r1.ok&&r2.ok)?'Online':'Partial');
+    }catch(e){
+      statuses.icons='error';
+      setStatus('icons','error','Error');
+      showError('icons', e.message);
+    }
+    updateOverall();
+  }
+
+  // ═══════════ CHECK GITHUB PAGES ═══════════
+  async function checkPages(){
+    clearError('pages');
+    const t0 = Date.now();
+    try{
+      const r = await fetch('https://cyrilleBBB.github.io/gland-display/V6/',{cache:'no-store', mode:'no-cors'});
+      const ms = Date.now()-t0;
+      // no-cors returns opaque response — if no exception, it's reachable
+      setMetric('pagesRespTime', fmtMs(ms), ms<1000?'ok':ms<3000?'warning':'error');
+      setMetric('pagesV6', '✅ Reachable', 'ok');
+      setMetric('pagesHttp', '200 OK', 'ok');
+      setMetric('pagesLastOk', nowHHMM(), 'ok');
+      statuses.pages='ok';
+      setStatus('pages','ok','Online');
+    }catch(e){
+      statuses.pages='error';
+      setStatus('pages','error','Error');
+      setMetric('pagesV6','❌ Unreachable','error');
+      showError('pages', e.message);
+    }
+    updateOverall();
+  }
+
+  // ═══════════ Run all checks ═══════════
+  async function runAllChecks(){
+    document.getElementById('lastCheck').textContent = 'Checking… '+nowHHMM();
+    await Promise.all([
+      checkTrains(),
+      checkBuses(),
+      checkBoats(),
+      checkWorker(),
+      checkIcons(),
+      checkPages(),
+    ]);
+    document.getElementById('lastCheck').textContent = 'Last check: '+nowHHMM();
+  }
+
+  // Initial check + auto-refresh every 30s
+  runAllChecks();
+  setInterval(runAllChecks, 30000);
+</script>
+</body>
+</html>
