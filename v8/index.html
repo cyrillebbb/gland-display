@@ -571,7 +571,7 @@
       allAlerts = (data.alerts || []).filter(a => a.header && a.header.trim() !== '');
       const upd = document.getElementById('alertUpdate');
       const n = new Date(), pad = v => String(v).padStart(2,'0');
-      upd.textContent = 'Last update: ' + pad(n.getHours()) + ':' + pad(n.getMinutes());
+      upd.textContent = ''; // no more information about update time of the content
       alertIndex = 0;
       renderAlert(allAlerts, alertIndex);
       // Reset rotation timer
