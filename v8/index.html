@@ -287,6 +287,7 @@
   const ICON_BASE  = 'https://icons.app.sbb.ch/icons/';
   const PICTO_BASE = 'https://icons.app.sbb.ch/picto/';
   const WORKER_URL = 'https://gland-alerts.cyrille-baptiste.workers.dev';
+  let cancelledN3 = []; // Cancelled N3 Nyon-Yvoire departures from CGN infotrafic
 
   // ── Clock ──
   function updateClock() {
@@ -514,18 +515,22 @@
         const dest=dep.to||'—';
         const cd=countdown(getSchedDate(dep));
         const lineNum=(dep.number||dep.name||dep.category||'').replace(/^0+/,'');
-const isCancelled = !lineNum || lineNum.length > 6;
-const lineBadge=isCancelled
-  ?'<span class="boat-line-badge" style="background:#FF1744;">?</span>'
-  :'<span class="boat-line-badge">'+lineNum+'</span>';
+const depTime=fmtHHMM(getPlannedDate(dep));
+const isNameCancelled=!lineNum||lineNum.length>6;
+const isN3Cancelled=cancelledN3.includes(depTime);
+const isCancelled=isNameCancelled||isN3Cancelled;
+const lineBadge='<span class="boat-line-badge">'+lineNum+'</span>';
+const timeStyle=isCancelled?'style="color:#FF1744;"':'';
+const inText=isCancelled?'--':cd.text;
+const inCls=isCancelled?'normal':cd.cls;
 const statusCell=isCancelled
-  ?'<div class="status-cell"><span class="status-text cancelled">Supprimé</span></div>'
+  ?'<div class="status-cell"><span class="status-text cancelled">Annulé</span></div>'
   :statusHtml(delayMin(dep.stop),dep.stop&&dep.stop.cancelled);
 return'<div class="boat-row">'
   +'<div class="boat-icon-cell">'+lineBadge+'</div>'
   +'<div class="boat-dest">'+dest+'</div>'
-  +'<div class="boat-time">'+fmtHHMM(getPlannedDate(dep))+'</div>'
-  +'<div class="boat-in '+cd.cls+'">'+cd.text+'</div>'
+  +'<div class="boat-time" '+timeStyle+'>'+fmtHHMM(getPlannedDate(dep))+'</div>'
+  +'<div class="boat-in '+inCls+'">'+inText+'</div>'
   +'<div>'+statusCell+'</div>'
   +'</div>';
       }).join('');
@@ -575,6 +580,7 @@ return'<div class="boat-row">'
       const r = await fetch(WORKER_URL, {cache:'no-store'}); if(!r.ok) return;
       const data = await r.json();
       allAlerts = (data.alerts || []).filter(a => a.header && a.header.trim() !== '');
+      cancelledN3 = data.cancelledN3 || [];
       const upd = document.getElementById('alertUpdate');
       const n = new Date(), pad = v => String(v).padStart(2,'0');
       upd.textContent = ''; // no more information about update time of the content
