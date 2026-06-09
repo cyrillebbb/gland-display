@@ -340,7 +340,7 @@
       const prog=new Date(stop.prognosis.departure).getTime();
       if(!isNaN(sched)&&!isNaN(prog)){
         const diff=Math.round((prog-sched)/60000);
-        return diff>0?diff:0;
+        return diff >= 2 ? diff : 0; // ignore delays under 2 minutes (API noise)
       }
     }
     return 0;
