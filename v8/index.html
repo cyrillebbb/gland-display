@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=1920, height=1080">
 <title>Gland — Live Trafic Information - V6</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <style>
   :root {
@@ -70,7 +68,6 @@
   .row-top-right { display:grid; grid-template-columns:1fr 1fr; gap:16px; min-height:0; }
   .panel-b,.panel-c { display:flex; flex-direction:column; }
   .panel-d { position:relative; overflow:hidden; border-radius:var(--radius); }
-  #map { width:100%; height:100%; border-radius:var(--radius); }
   .panel-e { grid-column:1 / 3; grid-row:3; display:flex; flex-direction:column; background:linear-gradient(180deg,#FFF7E9 0%,#FFF3DC 100%); }
 
   .main-header { display:none; }
@@ -197,6 +194,8 @@
   .loading-msg { padding:18px; text-align:center; color:#98A2B3; font-size:14px; font-weight:700; }
   .spinner { display:inline-block; width:14px; height:14px; border:2px solid #D0D5DD; border-top-color:var(--sbb-red); border-radius:50%; animation:spin .8s linear infinite; vertical-align:middle; margin-right:7px; }
   @keyframes spin { to { transform:rotate(360deg); } }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+  .alert-item { animation:fadeIn 0.5s ease; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.25} }
 
 
@@ -221,9 +220,9 @@
       <div class="station-name">Gland</div>
     </div>
     <!-- Right: date + clock -->
-    <div style="display:flex;align-items:center;gap:16px;min-width:420px;justify-content:flex-end;">
-      <div class="date-str" id="dateStr" style="font-size:26px;color:#07101F;font-weight:700;white-space:nowrap;">--</div>
-      <div style="width:1px;height:28px;background:#D4DAE3;"></div>
+    <div style="display:flex;align-items:center;gap:16px;width:420px;justify-content:flex-end;flex-shrink:0;">
+      <div class="date-str" id="dateStr" style="font-size:26px;color:#07101F;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums;">--</div>
+      <div style="width:1px;height:28px;background:#D4DAE3;flex-shrink:0;"></div>
       <div class="clock" id="clock">--:--:--</div>
     </div>
   </header>
@@ -271,7 +270,7 @@
     </div>
 
     <section class="panel panel-d">
-      <div id="map"></div>
+      <img src="map_tp_gland.png" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);display:block;" alt="Gland Transport Map">
     </section>
   </main>
 
@@ -308,7 +307,22 @@
   function fmtHHMM(d){ if(!d)return'--:--'; return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
   function getSchedDate(dep){
     const s=dep.stop||{};
+    // Use prognosis.departure (real time) if available — gives accurate countdown
+    if(s.prognosis&&s.prognosis.departure){
+      const prog=tsToDate(s.prognosis.departure);
+      if(prog) return prog;
+    }
     return tsToDate(s.departureTimestamp)||tsToDate(dep.departureTimestamp)||tsToDate(s.departure)||tsToDate(dep.departure);
+  }
+  function getPlannedDate(dep){
+    // Always returns the SCHEDULED time — for display only, never affected by delays
+    // Priority: stop.departure ISO string first (always planned time)
+    // departureTimestamp can sometimes include prognosis in this API
+    const s=dep.stop||{};
+    return tsToDate(s.departure)
+        || tsToDate(dep.departure)
+        || tsToDate(s.departureTimestamp)
+        || tsToDate(dep.departureTimestamp);
   }
   function countdown(depDate){
     if(!depDate)return{text:'—',cls:'normal'};
@@ -318,7 +332,19 @@
     if(diff<=5)return{text:diff+' min',cls:'soon'};
     return{text:diff+' min',cls:'normal'};
   }
-  function delayMin(stop){ if(!stop||stop.departureDelay==null)return 0; return Math.round(stop.departureDelay/60); }
+  function delayMin(stop){
+    if(!stop) return 0;
+    if(stop.departureDelay!=null) return Math.round(stop.departureDelay/60);
+    if(stop.prognosis&&stop.prognosis.departure&&stop.departure){
+      const sched=new Date(stop.departure).getTime();
+      const prog=new Date(stop.prognosis.departure).getTime();
+      if(!isNaN(sched)&&!isNaN(prog)){
+        const diff=Math.round((prog-sched)/60000);
+        return diff >= 2 ? diff : 0; // ignore delays under 2 minutes (API noise)
+      }
+    }
+    return 0;
+  }
   function lineIconHtml(cat,num){
     const c=(cat||'').toLowerCase(),n=(num||'').trim();
     const primary=ICON_BASE+(n?c+'-'+n:c)+'.svg';
@@ -379,7 +405,7 @@
   async function refreshTrains(){
     try{
       Object.keys(stopsCache).forEach(k=>delete stopsCache[k]);
-      const r=await fetch('https://transport.opendata.ch/v1/stationboard?station=Gland&limit=9&type=departure');
+      const r=await fetch('https://transport.opendata.ch/v1/stationboard?station=Gland&limit=9&type=departure',{cache:'no-store'});
       if(!r.ok)throw new Error('HTTP '+r.status);
       const data=await r.json();
       trainsData=data.stationboard||[];
@@ -399,7 +425,7 @@
           +'<div class="departure-row">'
           +'<div>'+lineIconHtml(cat,num)+'</div>'
           +'<div class="destination">'+dest+'</div>'
-          +'<div class="sched-time">'+fmtHHMM(schedDate)+'</div>'
+          +'<div class="sched-time">'+fmtHHMM(getPlannedDate(dep))+'</div>'
           +'<div><span class="countdown '+cd.cls+'" id="tcd-'+i+'">'+cd.text+'</span></div>'
           +'<div>'+statusHtml(delay,cancelled)+'</div>'
           +'<div class="platform">'+(plat&&plat!=='—'?'<img src="'+PICTO_BASE+'tracks-'+plat+'-fr-small.svg" style="height:22px;width:auto;" alt="'+plat+'">':plat)+'</div>'
@@ -452,7 +478,7 @@
         return'<div class="bus-row">'
           +'<div class="bus-icon-cell"><span class="bus-line-badge '+badgeCls+'">'+num+'</span></div>'
           +'<div class="bus-dest">'+dest+'</div>'
-          +'<div class="bus-time">'+fmtHHMM(getSchedDate(dep))+'</div>'
+          +'<div class="bus-time">'+fmtHHMM(getPlannedDate(dep))+'</div>'
           +'<div class="bus-in '+cd.cls+'">'+cd.text+'</div>'
           +'<div>'+statusHtml(delayMin(dep.stop),dep.stop&&dep.stop.cancelled)+'</div>'
           +'</div>';
@@ -488,20 +514,13 @@
         const dest=dep.to||'—';
         const cd=countdown(getSchedDate(dep));
         const lineNum=(dep.number||dep.name||dep.category||'').replace(/^0+/,'');
-        // Detect cancelled/disrupted boat: no valid line number or internal ID (e.g. "001390")
-        const isCancelled = !lineNum || lineNum.length > 6;
-        const lineBadge=isCancelled
-          ?'<span class="boat-line-badge" style="background:#FF1744;">?</span>'
-          :'<span class="boat-line-badge">'+lineNum+'</span>';
-        const statusCell=isCancelled
-          ?'<div class="status-cell"><span class="status-text cancelled">Supprimé</span></div>'
-          :statusHtml(delayMin(dep.stop),dep.stop&&dep.stop.cancelled);
+        const lineBadge=lineNum?'<span class="boat-line-badge">'+lineNum+'</span>':'';
         return'<div class="boat-row">'
           +'<div class="boat-icon-cell">'+lineBadge+'</div>'
           +'<div class="boat-dest">'+dest+'</div>'
           +'<div class="boat-time">'+fmtHHMM(getPlannedDate(dep))+'</div>'
           +'<div class="boat-in '+cd.cls+'">'+cd.text+'</div>'
-          +'<div>'+statusCell+'</div>'
+          +'<div>'+statusHtml(delayMin(dep.stop),dep.stop&&dep.stop.cancelled)+'</div>'
           +'</div>';
       }).join('');
       const n=new Date(),pad=v=>String(v).padStart(2,'0');
@@ -510,85 +529,65 @@
   }
 
   // ═══════════ PANEL E — ALERTS ═══════════
-  async function refreshAlerts(){
-    try{
-      const r=await fetch(WORKER_URL,{cache:'no-store'});if(!r.ok)return;
-      const data=await r.json();
-      const alerts=(data.alerts||[]).filter(a=>a.header&&a.header.trim()!=='');
-      const content=document.getElementById('alertsContent');
-      const dot=document.getElementById('alertDot');
-      const upd=document.getElementById('alertUpdate');
-      const n=new Date(),pad=v=>String(v).padStart(2,'0');
-      upd.textContent='Last update: '+pad(n.getHours())+':'+pad(n.getMinutes());
-      if(!alerts.length){
-        dot.style.background='#4CAF50';
-        content.innerHTML='<div class="no-alerts">No disruptions on the network</div>';
-        return;
+  let allAlerts = [];
+  let alertIndex = 0;
+  let alertRotateTimer = null;
+
+  function renderAlert(alerts, idx) {
+    const content = document.getElementById('alertsContent');
+    const dot = document.getElementById('alertDot');
+    if (!alerts.length) {
+      dot.style.background = '#4CAF50';
+      content.innerHTML = '<div class="no-alerts">No disruptions on the network</div>';
+      return;
+    }
+    dot.style.background = '#FF5722';
+    const a = alerts[idx % alerts.length];
+    const cause = a.cause || '';
+    const isCritical = ['TECHNICAL_PROBLEM','ACCIDENT'].includes(cause);
+    const isInfo = ['CONSTRUCTION','MAINTENANCE'].includes(cause);
+    const cls = isCritical ? 'alert-critical' : isInfo ? 'alert-info' : 'alert-warning';
+    const desc = (a.description || '').replace(/<[^>]+>/g, '');
+    // Show full description when rotating — more space available
+    const fullDesc = desc.length > 300 ? desc.substring(0, 300) + '…' : desc;
+    // Show counter if multiple alerts
+    const counter = alerts.length > 1
+      ? '<span style="font-size:12px;color:#9CA3AF;margin-left:auto;flex-shrink:0;">'+(idx % alerts.length + 1)+' / '+alerts.length+'</span>'
+      : '';
+    content.innerHTML =
+      '<div class="alert-item ' + cls + '" style="flex-direction:column;gap:6px;">'
+      + '<div style="display:flex;align-items:center;gap:10px;">'
+      + '<div class="alert-head-c">' + a.header + '</div>'
+      + counter
+      + '</div>'
+      + (fullDesc ? '<div class="alert-desc-c" style="max-height:none;">' + fullDesc + '</div>' : '')
+      + '</div>';
+  }
+
+  async function refreshAlerts() {
+    try {
+      const r = await fetch(WORKER_URL, {cache:'no-store'}); if(!r.ok) return;
+      const data = await r.json();
+      allAlerts = (data.alerts || []).filter(a => a.header && a.header.trim() !== '');
+      const upd = document.getElementById('alertUpdate');
+      const n = new Date(), pad = v => String(v).padStart(2,'0');
+      upd.textContent = ''; // no more information about update time of the content
+      alertIndex = 0;
+      renderAlert(allAlerts, alertIndex);
+      // Reset rotation timer
+      if (alertRotateTimer) clearInterval(alertRotateTimer);
+      if (allAlerts.length > 1) {
+        alertRotateTimer = setInterval(() => {
+          alertIndex++;
+          renderAlert(allAlerts, alertIndex);
+        }, 10000); // rotate every 10 seconds
       }
-      dot.style.background='#FF5722';
-      content.innerHTML=alerts.slice(0,3).map(a=>{
-        const cause=a.cause||'';
-        const isCritical=['TECHNICAL_PROBLEM','ACCIDENT'].includes(cause);
-        const isInfo=['CONSTRUCTION','MAINTENANCE'].includes(cause);
-        const cls=isCritical?'alert-critical':isInfo?'alert-info':'alert-warning';
-        const icon=isCritical?'🔴':isInfo?'🔧':'⚠️';
-        const desc=(a.description||'').replace(/<[^>]+>/g,'');
-        const shortDesc=desc.length>145?desc.substring(0,145)+'…':desc;
-        return'<div class="alert-item '+cls+'">'
-          +'<div><div class="alert-head-c">'+a.header+'</div>'
-          +(shortDesc?'<div class="alert-desc-c">'+shortDesc+'</div>':'')
-          +'</div></div>';
-      }).join('');
-    }catch(e){}
+    } catch(e) {}
   }
 
   // ═══════════ PANEL D — MAP (Leaflet + OpenStreetMap) ═══════════
   function initMap(){
-    // Use CartoDB Positron — cleaner, less cluttered than OSM default
-    const map = L.map('map', {
-      center: [46.4190, 6.2695],
-      zoom: 17,
-      zoomControl: false,
-      attributionControl: true,
-      dragging: false,
-      scrollWheelZoom: false,
-      doubleClickZoom: false,
-      touchZoom: false,
-    });
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
-      maxZoom: 19,
-    }).addTo(map);
-
-    // ── Icon factory ──
-    function makeMarker(color, textColor, label, sublabel) {
-      const html =
-        '<div style="'
-        +'background:'+color+';'
-        +'color:'+textColor+';'
-        +'border-radius:8px;'
-        +'padding:5px 10px;'
-        +'font-size:12px;'
-        +'font-weight:700;'
-        +'white-space:nowrap;'
-        +'box-shadow:0 2px 8px rgba(0,0,0,0.25);'
-        +'border:2px solid rgba(255,255,255,0.8);'
-        +'line-height:1.3;'
-        +'text-align:center;'
-        +'">'
-        +label
-        +(sublabel?'<br><span style="font-size:10px;font-weight:400;opacity:0.85;">'+sublabel+'</span>':'')
-        +'</div>';
-      return L.divIcon({
-        className: '',
-        html: html,
-        iconAnchor: [0, 0],
-        popupAnchor: [0, -10],
-      });
-    }
-
-
+  
   }
 
   // ═══════════ Init ═══════════
@@ -602,6 +601,7 @@
   setInterval(refreshBuses,   30000);
   setInterval(refreshBoats,   30000);
   setInterval(refreshAlerts, 120000);
+  setInterval(() => location.reload(), 600000); // ← ajoute cette ligne
 </script>
 </body>
 </html>
