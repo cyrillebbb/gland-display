@@ -514,14 +514,20 @@
         const dest=dep.to||'—';
         const cd=countdown(getSchedDate(dep));
         const lineNum=(dep.number||dep.name||dep.category||'').replace(/^0+/,'');
-        const lineBadge=lineNum?'<span class="boat-line-badge">'+lineNum+'</span>':'';
-        return'<div class="boat-row">'
-          +'<div class="boat-icon-cell">'+lineBadge+'</div>'
-          +'<div class="boat-dest">'+dest+'</div>'
-          +'<div class="boat-time">'+fmtHHMM(getPlannedDate(dep))+'</div>'
-          +'<div class="boat-in '+cd.cls+'">'+cd.text+'</div>'
-          +'<div>'+statusHtml(delayMin(dep.stop),dep.stop&&dep.stop.cancelled)+'</div>'
-          +'</div>';
+const isCancelled = !lineNum || lineNum.length > 6;
+const lineBadge=isCancelled
+  ?'<span class="boat-line-badge" style="background:#FF1744;">?</span>'
+  :'<span class="boat-line-badge">'+lineNum+'</span>';
+const statusCell=isCancelled
+  ?'<div class="status-cell"><span class="status-text cancelled">Supprimé</span></div>'
+  :statusHtml(delayMin(dep.stop),dep.stop&&dep.stop.cancelled);
+return'<div class="boat-row">'
+  +'<div class="boat-icon-cell">'+lineBadge+'</div>'
+  +'<div class="boat-dest">'+dest+'</div>'
+  +'<div class="boat-time">'+fmtHHMM(getPlannedDate(dep))+'</div>'
+  +'<div class="boat-in '+cd.cls+'">'+cd.text+'</div>'
+  +'<div>'+statusCell+'</div>'
+  +'</div>';
       }).join('');
       const n=new Date(),pad=v=>String(v).padStart(2,'0');
       // boatUpdate removed
