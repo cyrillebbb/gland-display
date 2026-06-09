@@ -288,6 +288,7 @@
   const ICON_BASE  = 'https://icons.app.sbb.ch/icons/';
   const PICTO_BASE = 'https://icons.app.sbb.ch/picto/';
   const WORKER_URL = 'https://gland-alerts.cyrille-baptiste.workers.dev';
+  let cgnCancelledAlerts = [];
 
   // ── Clock ──
   function updateClock() {
@@ -308,11 +309,6 @@
   function fmtHHMM(d){ if(!d)return'--:--'; return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
   function getSchedDate(dep){
     const s=dep.stop||{};
-    // Use prognosis.departure (real time) if available — gives accurate countdown
-    if(s.prognosis&&s.prognosis.departure){
-      const prog=tsToDate(s.prognosis.departure);
-      if(prog) return prog;
-    }
     return tsToDate(s.departureTimestamp)||tsToDate(dep.departureTimestamp)||tsToDate(s.departure)||tsToDate(dep.departure);
   }
   function countdown(depDate){
@@ -323,19 +319,7 @@
     if(diff<=5)return{text:diff+' min',cls:'soon'};
     return{text:diff+' min',cls:'normal'};
   }
-  function delayMin(stop){
-    if(!stop) return 0;
-    if(stop.departureDelay!=null) return Math.round(stop.departureDelay/60);
-    if(stop.prognosis&&stop.prognosis.departure&&stop.departure){
-      const sched=new Date(stop.departure).getTime();
-      const prog=new Date(stop.prognosis.departure).getTime();
-      if(!isNaN(sched)&&!isNaN(prog)){
-        const diff=Math.round((prog-sched)/60000);
-        return diff>0?diff:0;
-      }
-    }
-    return 0;
-  }
+  function delayMin(stop){ if(!stop||stop.departureDelay==null)return 0; return Math.round(stop.departureDelay/60); }
   function lineIconHtml(cat,num){
     const c=(cat||'').toLowerCase(),n=(num||'').trim();
     const primary=ICON_BASE+(n?c+'-'+n:c)+'.svg';
@@ -396,7 +380,7 @@
   async function refreshTrains(){
     try{
       Object.keys(stopsCache).forEach(k=>delete stopsCache[k]);
-      const r=await fetch('https://transport.opendata.ch/v1/stationboard?station=Gland&limit=9&type=departure',{cache:'no-store'});
+      const r=await fetch('https://transport.opendata.ch/v1/stationboard?station=Gland&limit=9&type=departure');
       if(!r.ok)throw new Error('HTTP '+r.status);
       const data=await r.json();
       trainsData=data.stationboard||[];
@@ -505,13 +489,25 @@
         const dest=dep.to||'—';
         const cd=countdown(getSchedDate(dep));
         const lineNum=(dep.number||dep.name||dep.category||'').replace(/^0+/,'');
-        const lineBadge=lineNum?'<span class="boat-line-badge">'+lineNum+'</span>':'';
+        const depTime=fmtHHMM(getPlannedDate(dep));
+        const isNameCancelled=!lineNum||lineNum.length>6;
+        const isAlertCancelled=cgnCancelledAlerts.some(a=>
+          (a.header+' '+(a.description||'')).includes(dest.split(',')[0])||
+          (a.header+' '+(a.description||'')).includes(depTime)
+        );
+        const isCancelled=isNameCancelled||isAlertCancelled;
+        const lineBadge=isCancelled
+          ?'<span class="boat-line-badge" style="background:#FF1744;">?</span>'
+          :'<span class="boat-line-badge">'+lineNum+'</span>';
+        const statusCell=isCancelled
+          ?'<div class="status-cell"><span class="status-text cancelled">Annulé</span></div>'
+          :statusHtml(delayMin(dep.stop),dep.stop&&dep.stop.cancelled);
         return'<div class="boat-row">'
           +'<div class="boat-icon-cell">'+lineBadge+'</div>'
           +'<div class="boat-dest">'+dest+'</div>'
-          +'<div class="boat-time">'+fmtHHMM(getSchedDate(dep))+'</div>'
+          +'<div class="boat-time">'+fmtHHMM(getPlannedDate(dep))+'</div>'
           +'<div class="boat-in '+cd.cls+'">'+cd.text+'</div>'
-          +'<div>'+statusHtml(delayMin(dep.stop),dep.stop&&dep.stop.cancelled)+'</div>'
+          +'<div>'+statusCell+'</div>'
           +'</div>';
       }).join('');
       const n=new Date(),pad=v=>String(v).padStart(2,'0');
@@ -525,6 +521,7 @@
       const r=await fetch(WORKER_URL,{cache:'no-store'});if(!r.ok)return;
       const data=await r.json();
       const alerts=(data.alerts||[]).filter(a=>a.header&&a.header.trim()!=='');
+      cgnCancelledAlerts=alerts.filter(a=>a.isCGN&&((a.header+' '+(a.description||'')).toLowerCase().includes('supprim')||(a.header+' '+(a.description||'')).toLowerCase().includes('interrup')||(a.header+' '+(a.description||'')).toLowerCase().includes('annul')));
       const content=document.getElementById('alertsContent');
       const dot=document.getElementById('alertDot');
       const upd=document.getElementById('alertUpdate');
