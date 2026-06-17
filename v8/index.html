@@ -609,9 +609,9 @@ return'<div class="boat-row">'
   refreshAlerts();
   initMap();
 
-  setInterval(refreshTrains,  30000);
-  setInterval(refreshBuses,   30000);
-  setInterval(refreshBoats,   30000);
+  setInterval(refreshTrains,  60000);
+  setInterval(refreshBuses,   60000);
+  setInterval(refreshBoats,   60000);
   setInterval(refreshAlerts, 120000);
   setInterval(() => location.reload(), 600000); // ← ajoute cette ligne
 </script>
